@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-from hashtag.models import Hashtag
-from catagories.models import Catagory 
+# from hashtag.models import Hashtag
+# from catagories.models import Catagory 
 from ckeditor.fields import RichTextField
 
 class Posts(models.Model):
@@ -9,7 +9,7 @@ class Posts(models.Model):
     title = models.CharField(max_length=140)
     short_desc = models.CharField(max_length=500, default=None)
     desc = RichTextField()
-    catagory = models.ForeignKey(Catagory, on_delete=models.CASCADE, max_length=50)
+    # catagory = models.ForeignKey(Catagory, on_delete=models.CASCADE, max_length=50)
     # attachment = models.ImageField(upload_to='posts/', null=True)
     # hashtag = models.ManyToManyField(Hashtag, related_name='plans')
     post_time = models.TimeField(auto_now=True, null=True)

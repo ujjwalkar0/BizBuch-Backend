@@ -37,21 +37,25 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_crontab',
     'rest_framework',
     'rest_framework.authtoken',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     'corsheaders',
-    'chat',
-    'plans',
-    'users',
-    'hashtag',
+    'accounts',
+    # 'chat',
+    # 'plans',
+    # 'users',
+    # 'hashtag',
     'posts',
-    'questions',
-    'noti',
+    # 'questions',
+    # 'noti',
     'ckeditor',
-    'resources',
-    'catagories',
-    'mentors',
-    'ideas'
+    # 'resources',
+    # 'catagories',
+    # 'mentors',
+    # 'ideas'
 ]
 
 MIDDLEWARE = [
@@ -97,37 +101,65 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # Rest API
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
-    
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '1000/day',
+        'register': '10/minute',
+        'verify': '20/minute',
+        'login': '10/minute',
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'My Social App API',
+    'DESCRIPTION': 'OTP-based registration + authentication system',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+}
+
+#
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ujjwalkar21@gmail.com'
+EMAIL_HOST_PASSWORD = 'qhyn oriu ebla xibz'
+DEFAULT_FROM_EMAIL = 'ujjwalkar21@gmail.com'
+
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
 
 # with open('secreat.txt','r') as f:
 #     username,password=f.read().split('\n')
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ujjwal',
-        'USER': os.environ.get('USER'),
-        'PASSWORD': os.environ.get("PASS"),
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'ujjwal',
+#         'USER': os.environ.get('USER'),
+#         'PASSWORD': os.environ.get("PASS"),
+#     }
+# }
 
-if os.environ.get("HEROKU")=='1':
-    import dj_database_url
-    DATABASES['default'] =  dj_database_url.config(default=os.getenv('DATABASE_URL'))
+# if os.environ.get("HEROKU")=='1':
+#     import dj_database_url
+#     DATABASES['default'] =  dj_database_url.config(default=os.getenv('DATABASE_URL'))
 
 # db_from_env = dj_database_url.config(conn_max_age=600)
 # DATABASES['default'].update(db_from_env)
@@ -147,9 +179,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    }
 ]
 
+CRONJOBS = [
+    ('*/5 * * * *', 'accounts.cron.delete_expired_password_resets'),
+    ('*/5 * * * *', 'accounts.cron.delete_expired_pending_users'),
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/

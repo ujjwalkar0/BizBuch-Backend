@@ -1,0 +1,6 @@
+from accounts.views.register_view import RegisterSendOTPView
+from accounts.views.resend_otp_view import ResendOTPView
+from accounts.views.reset_password_view import ResetPasswordView
+from accounts.views.verify_otp_view import VerifyOTPCreateUserView
+from accounts.views.login_view import LoginView
+from accounts.views.forgot_password_view import ForgotPasswordView
