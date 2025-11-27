@@ -1,1 +1,2 @@
-from cron.delete_expired_pending_users import delete_expired_pending_users
+from accounts.cron.delete_expired_pending_users import delete_expired_pending_users
+from accounts.cron.delete_expired_password_resets import delete_expired_password_resets
