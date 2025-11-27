@@ -117,8 +117,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'My Social App API',
-    'DESCRIPTION': 'OTP-based registration + authentication system',
+    'TITLE': 'BizBuch API',
+    'DESCRIPTION': 'API Documentation for BizBuch',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
