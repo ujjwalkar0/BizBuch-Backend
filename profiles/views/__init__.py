@@ -1,0 +1,3 @@
+from .profile_detail_api_view import ProfileDetailAPIView
+from .profile_list_api_view import ProfileListAPIView
+from .my_profile_api_view import MyProfileAPIView

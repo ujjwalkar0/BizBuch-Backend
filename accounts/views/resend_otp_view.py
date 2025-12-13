@@ -5,7 +5,6 @@ from accounts.serializers import ResendOTPSerializer
 from accounts.services import RegistrationService
 from accounts.throttle.register_throttle import RegisterThrottle
 
-service = RegistrationService()
 
 class ResendOTPView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -19,7 +18,7 @@ class ResendOTPView(APIView):
         email = serializer.validated_data["email"]
 
         try:
-            service.resend_otp(email)
+            RegistrationService.resend_otp(email)
             return Response({"detail": "OTP resent"}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

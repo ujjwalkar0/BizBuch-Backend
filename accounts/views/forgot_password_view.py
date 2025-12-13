@@ -2,9 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from accounts.serializers import ForgotPasswordSerializer
-from ..services import PasswordResetService
+from accounts.services import PasswordResetService
 
-reset_service = PasswordResetService()
 
 class ForgotPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -17,7 +16,7 @@ class ForgotPasswordView(APIView):
         email = serializer.validated_data["email"]
 
         try:
-            reset_service.send_reset_otp(email)
+            PasswordResetService.send_reset_otp(email)
             return Response(
                 {"detail": "Password reset OTP sent"},
                 status=status.HTTP_200_OK

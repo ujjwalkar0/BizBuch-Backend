@@ -27,6 +27,8 @@ urlpatterns = [
         name='redoc'
     ),
     path("auth/", include("accounts.urls")),
-    path('users/',include('users.urls')),
-    # path('posts/',include('posts.urls')),
+    path('posts/',include('posts.urls')),
+    path('onboarding/',include('onboarding.urls')),
+    path('profiles/',include('profiles.urls')),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

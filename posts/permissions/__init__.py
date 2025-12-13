@@ -1,0 +1,1 @@
+from posts.permissions.owner_permission import IsOwner

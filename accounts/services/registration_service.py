@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from accounts.models import PendingUser
 from accounts.utils import generate_otp, send_otp_email
+from profiles.models import Profile
 
 User = get_user_model()
 
@@ -15,7 +16,7 @@ class RegistrationService:
     """
     Single responsibility: handle register -> create/update PendingUser and send OTP.
     """
-
+    @staticmethod
     def register(self, username, email, raw_password, first_name="", last_name="", recaptcha_token=None, recaptcha_validator=None):
         email = email.lower()
         # recaptcha validation
@@ -49,7 +50,8 @@ class RegistrationService:
         # Send email (use Celery in prod)
         send_otp_email(email, otp, username=username)
         return pending
-
+    
+    @staticmethod
     def resend_otp(self, email):
         email = email.lower()
         try:
@@ -74,6 +76,7 @@ class RegistrationService:
         send_otp_email(email, new_otp, username=pending.username)
         return pending
 
+    @staticmethod
     def verify_otp_and_create_user(self, email, otp):
         email = email.lower()
         try:
@@ -104,6 +107,11 @@ class RegistrationService:
             first_name=pending.first_name,
             last_name=pending.last_name,
             password=pending.password,  # already hashed
+        )
+
+        Profile.objects.create(
+            user=user,
+            display_name=user.username
         )
 
         # cleanup

@@ -6,9 +6,6 @@ from accounts.services import RegistrationService
 from accounts.throttle.register_throttle import RegisterThrottle
 from accounts.utils import verify_recaptcha_token
 
-
-service = RegistrationService()
-
 class RegisterSendOTPView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RegisterThrottle]
@@ -20,7 +17,7 @@ class RegisterSendOTPView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         try:
-            pending = service.register(
+            pending = RegistrationService.register(
                 username=data["username"],
                 email=data["email"],
                 raw_password=data["password"],

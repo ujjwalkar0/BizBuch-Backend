@@ -4,7 +4,6 @@ from rest_framework import permissions, status
 from accounts.serializers import ResetPasswordSerializer
 from accounts.services import PasswordResetService
 
-reset_service = PasswordResetService()
 
 class ResetPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -17,7 +16,7 @@ class ResetPasswordView(APIView):
         data = serializer.validated_data
 
         try:
-            reset_service.reset_password(
+            PasswordResetService.reset_password(
                 email=data["email"],
                 otp=data["otp"],
                 new_password=data["new_password"]

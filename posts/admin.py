@@ -1,9 +1,5 @@
 from django.contrib import admin
-from posts.models import *
+from posts.models import Post, PostReport
 
-admin.site.register([
-    Posts,
-    Comments,
-    Likes,
-    UnLikes,
-])
+# Admin Can Delete a Post after checking report
+admin.site.register([Post, PostReport])

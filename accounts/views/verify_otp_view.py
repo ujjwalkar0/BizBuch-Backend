@@ -5,7 +5,6 @@ from accounts.serializers import VerifyOTPSerializer
 from accounts.services import RegistrationService
 from accounts.throttle.anonrate_throttle import VerifyThrottle
 
-service = RegistrationService()
 
 class VerifyOTPCreateUserView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -17,7 +16,7 @@ class VerifyOTPCreateUserView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         try:
-            user = service.verify_otp_and_create_user(data["email"], data["otp"])
+            user = RegistrationService.verify_otp_and_create_user(data["email"], data["otp"])
             return Response({"detail":"Account created successfully"}, status=status.HTTP_201_CREATED)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -6,7 +6,8 @@ from django.utils import timezone
 User = get_user_model()
 
 class PasswordResetService:
-
+    
+    @staticmethod
     def send_reset_otp(self, email):
         email = email.lower()
 
@@ -28,6 +29,7 @@ class PasswordResetService:
         send_otp_email(email, otp)
         return reset_obj
     
+    @staticmethod
     def reset_password(self, email, otp, new_password):
         email = email.lower()
 
