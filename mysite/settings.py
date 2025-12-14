@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     # 'noti',
     'ckeditor',
     'onboarding',
-    'profiles'
+    'profiles',
+    'core'
     # 'resources',
     # 'catagories',
     # 'mentors',
@@ -132,9 +133,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'admin@gmail.com'
-EMAIL_HOST_PASSWORD = 'password'
-DEFAULT_FROM_EMAIL = 'admin@gmail.com'
+EMAIL_HOST_USER = 'ujjwalkar21@gmail.com'
+EMAIL_HOST_PASSWORD = 'qhyn oriu ebla xibz'
+DEFAULT_FROM_EMAIL = 'ujjwalkar21@gmail.com'
 
 
 # Database
@@ -143,7 +144,7 @@ DEFAULT_FROM_EMAIL = 'admin@gmail.com'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3.2',
+        'NAME': BASE_DIR / 'db.sqlite3.3',
     }
 }
 

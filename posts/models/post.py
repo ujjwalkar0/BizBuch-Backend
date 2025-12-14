@@ -1,10 +1,8 @@
 from django.db import models
 from django.conf import settings
 
-User = settings.AUTH_USER_MODEL
-
 class Post(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")
     content = models.TextField(blank=True)
 
     image = models.ImageField(upload_to="posts/", blank=True, null=True)

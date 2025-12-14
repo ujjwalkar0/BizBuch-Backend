@@ -7,7 +7,7 @@ from posts.services import PostService
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         PostService.create_post(self.request.user, serializer.validated_data)
