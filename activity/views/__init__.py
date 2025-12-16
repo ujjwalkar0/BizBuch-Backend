@@ -1,0 +1,4 @@
+from .activity_list_view import ActivityListView
+from .activity_mark_all_read_view import ActivityMarkAllReadView
+from .activity_mark_read_view import ActivityMarkReadView
+from .activity_log_view import ActivityLogView
