@@ -30,5 +30,6 @@ urlpatterns = [
     path('posts/',include('posts.urls')),
     path('onboarding/',include('onboarding.urls')),
     path('profiles/',include('profiles.urls')),
+    path('activity/',include('activity.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

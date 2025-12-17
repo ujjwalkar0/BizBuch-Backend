@@ -1,6 +1,7 @@
+from activity.services import NotificationService
 from intelligence.services import PostRecommendationService
 from posts.models import PostComment, Post
-# from django.db import transaction
+from django.db import transaction
 
 class CommentService:
 
@@ -9,6 +10,7 @@ class CommentService:
         return PostComment.objects.filter(post_id=post_id).order_by("-created_at")
 
     @staticmethod
+    @transaction.atomic
     def create_comment(user, post_id, validated_data):
         post = Post.objects.get(id=post_id)
 
@@ -18,8 +20,8 @@ class CommentService:
             content=validated_data["content"]
         )
 
-        # recommendation trigger
         PostRecommendationService.on_comment_added(comment)
+        NotificationService.on_comment_added(comment=comment)
 
         return comment
 

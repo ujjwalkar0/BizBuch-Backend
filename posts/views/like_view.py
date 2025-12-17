@@ -11,7 +11,7 @@ class PostLikeListCreateView(generics.ListCreateAPIView):
     serializer_class = PostLikeSerializer
 
     # Anyone can see likes
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return LikeService.list_likes(self.kwargs["post_id"])
