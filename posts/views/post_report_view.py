@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(tags=["Reports"])
-class PostReportListCreateView(generics.ListCreateAPIView):
+class PostReportListCreateView(generics.CreateAPIView):
     serializer_class = PostReportSerializer
     permission_classes = [permissions.IsAuthenticated]
 

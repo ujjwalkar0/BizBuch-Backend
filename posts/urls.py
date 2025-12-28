@@ -14,6 +14,8 @@ urlpatterns = [
     # Likes
     path("<int:post_id>/likes/", PostLikeListCreateView.as_view(), name="post_like_list_create"),
     path("likes/<int:pk>/", PostLikeDeleteView.as_view(), name="post_like_delete"),
+    
+    # Report
     path("<int:post_id>/report/", PostReportListCreateView.as_view(), name="post_report"),
 
 ]
