@@ -5,7 +5,8 @@ from accounts.views import (
             VerifyOTPCreateUserView, 
             LoginView, 
             ResetPasswordView, 
-            ForgotPasswordView
+            ForgotPasswordView,
+            TokenValidateView
         )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
     path("forgot-password/", ForgotPasswordView.as_view(), name="forgot_password"),
     path("reset-password/", ResetPasswordView.as_view()),
+    path("validate-token/", TokenValidateView.as_view(), name="token_validate"),
 ]

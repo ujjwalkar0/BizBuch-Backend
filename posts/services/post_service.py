@@ -5,6 +5,7 @@ class PostService:
 
     @staticmethod
     def create_post(user, validated_data):
+        print(validated_data)
         return Post.objects.create(user=user, **validated_data)
 
     @staticmethod

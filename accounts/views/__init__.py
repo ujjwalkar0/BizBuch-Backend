@@ -4,3 +4,4 @@ from accounts.views.reset_password_view import ResetPasswordView
 from accounts.views.verify_otp_view import VerifyOTPCreateUserView
 from accounts.views.login_view import LoginView
 from accounts.views.forgot_password_view import ForgotPasswordView
+from .token_validate_view import TokenValidateView

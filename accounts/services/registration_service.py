@@ -17,7 +17,7 @@ class RegistrationService:
     Single responsibility: handle register -> create/update PendingUser and send OTP.
     """
     @staticmethod
-    def register(self, username, email, raw_password, first_name="", last_name="", recaptcha_token=None, recaptcha_validator=None):
+    def register(username, email, raw_password, first_name="", last_name="", recaptcha_token=None, recaptcha_validator=None):
         email = email.lower()
         # recaptcha validation
         if recaptcha_token and recaptcha_validator and not recaptcha_validator(recaptcha_token):
@@ -52,7 +52,7 @@ class RegistrationService:
         return pending
     
     @staticmethod
-    def resend_otp(self, email):
+    def resend_otp(email):
         email = email.lower()
         try:
             pending = PendingUser.objects.get(email=email)
@@ -77,7 +77,7 @@ class RegistrationService:
         return pending
 
     @staticmethod
-    def verify_otp_and_create_user(self, email, otp):
+    def verify_otp_and_create_user(email, otp):
         email = email.lower()
         try:
             pending = PendingUser.objects.get(email=email)

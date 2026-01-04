@@ -4,3 +4,4 @@ from accounts.serializers.verify_otp_serializer import VerifyOTPSerializer
 from accounts.serializers.resend_otp import ResendOTPSerializer
 from accounts.serializers.login_serializer import LoginSerializer
 from accounts.serializers.forgot_password_serializer import ForgotPasswordSerializer
+from .token_validate_serializer import TokenValidateSerializer

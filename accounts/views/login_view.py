@@ -11,8 +11,11 @@ class LoginView(APIView):
     throttle_classes = [LoginThrottle]
 
     def post(self, request):
+        print("Login attempt", request.data)
         serializer = LoginSerializer(data=request.data)
+        print("Validating serializer")
         serializer.is_valid(raise_exception=True)
+        print("Serializer valid")
 
         user = serializer.validated_data["user"]
 

@@ -4,23 +4,34 @@ from rest_framework import serializers
 User = get_user_model()
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    username = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        email = data["email"].lower()
+        identifier = data["username"]
         password = data["password"]
 
-        # get user by email
-        try:
-            user_obj = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid email or password")
+        # Try email first
+        user = User.objects.filter(email__iexact=identifier).first()
 
-        # authenticate with username (Django auth uses username)
-        user = authenticate(username=user_obj.username, password=password)
+        print("User found by email:", user)
+
+        # If not email, try username
         if not user:
-            raise serializers.ValidationError("Invalid email or password")
+            user = User.objects.filter(username__iexact=identifier).first()
+
+            print("User found by username:", user)
+
+        if not user:
+            raise serializers.ValidationError("Invalid credentials")
+
+        user = authenticate(
+            username=user.username,
+            password=password
+        )
+
+        if not user:
+            raise serializers.ValidationError("Invalid credentials")
 
         if not user.is_active:
             raise serializers.ValidationError("User account disabled")

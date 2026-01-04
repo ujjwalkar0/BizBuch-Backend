@@ -32,4 +32,6 @@ urlpatterns = [
     path('profiles/',include('profiles.urls')),
     path('activity/',include('activity.urls')),
 
+    path("uploads/", include("uploads.urls")),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
