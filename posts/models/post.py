@@ -2,13 +2,13 @@ from django.db import models
 from django.conf import settings
 
 class Post(models.Model):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts_author")
     
     content = models.TextField(blank=True)
-    image = models.CharField(max_length=255)
+    imageUrl = models.CharField(max_length=255, null=True, blank=True)
     poll = models.JSONField(null=True, blank=True)
     location = models.CharField(max_length=255, blank=True)
-    feelings = models.CharField(max_length=100, blank=True)
+    feeling = models.CharField(max_length=100, blank=True)
     privacy = models.CharField(max_length=50, default="public")
 
     created_at = models.DateTimeField(auto_now_add=True)

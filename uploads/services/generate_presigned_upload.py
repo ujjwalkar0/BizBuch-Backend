@@ -9,7 +9,7 @@ s3 = boto3.client(
     region_name=settings.AWS_REGION,
 )
 
-def generate_presigned_upload(user_id, data):
+def generate_presigned_upload(user_id, content_type):
     key = f"posts/{user_id}/{uuid.uuid4()}.jpg"
 
     upload_url = s3.generate_presigned_url(
@@ -17,7 +17,7 @@ def generate_presigned_upload(user_id, data):
         Params={
             "Bucket": settings.AWS_S3_BUCKET,
             "Key": key,
-            "ContentType": data["contentType"],
+            "ContentType": content_type,
         },
         ExpiresIn=300,  # URL expires in 5 minutes
     )
@@ -26,5 +26,5 @@ def generate_presigned_upload(user_id, data):
 
     return {
         "uploadUrl": upload_url,
-        "publicUrl": public_url,
+        "publicUrl": key,
     }

@@ -1,1 +1,2 @@
 from .generate_presigned_upload import generate_presigned_upload
+from .generate_presigned_view import generate_presigned_view

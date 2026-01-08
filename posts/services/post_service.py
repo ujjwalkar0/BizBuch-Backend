@@ -4,9 +4,8 @@ from django.db.models import F, Case, When, IntegerField
 class PostService:
 
     @staticmethod
-    def create_post(user, validated_data):
-        print(validated_data)
-        return Post.objects.create(user=user, **validated_data)
+    def create_post(author, validated_data):
+        return Post.objects.create(author=author, **validated_data)
 
     @staticmethod
     def update_post(post, validated_data):

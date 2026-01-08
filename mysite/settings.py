@@ -131,8 +131,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = 'ujjwalkar21@gmail.com'
+EMAIL_HOST_PASSWORD = 'vpux jmfq isro xyci'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # AWS Configuration
@@ -159,12 +159,12 @@ AWS_S3_BUCKET = "bizbuch-media"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3.3',
+        'NAME': BASE_DIR / 'db.sqlite3.4',
     }
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=36500),  # ~100 years, will it change later.
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=36500),  # ~100 years
     "REFRESH_TOKEN_LIFETIME": timedelta(days=36500),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
