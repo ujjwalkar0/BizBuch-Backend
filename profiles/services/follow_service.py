@@ -9,12 +9,13 @@ class FollowService:
         if user == target_user:
             raise ValidationError("You cannot follow yourself.")
 
-        follow = ProfileFollow.objects.get_or_create(
+        follow, created = ProfileFollow.objects.get_or_create(
             follower=user,
             following=target_user
         )
 
-        NotificationService.on_user_followed(follow)
+        if created:
+            NotificationService.on_user_followed(follow)
 
     @staticmethod
     def unfollow(user, target_user):

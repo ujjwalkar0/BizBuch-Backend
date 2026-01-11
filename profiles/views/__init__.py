@@ -5,3 +5,4 @@ from .follow_api_view import FollowProfileAPIView
 from .followers_api_view import FollowersListAPIView
 from .followings_api_view import FollowingListAPIView
 from .unfollow_api_view import UnfollowProfileAPIView
+from .connections_api_view import ConnectionsAPIView

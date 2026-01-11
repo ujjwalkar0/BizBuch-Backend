@@ -8,3 +8,4 @@ class ProfileDetailAPIView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ProfileSerializer
     queryset = Profile.objects.filter(is_public=True)
+    lookup_field = 'user_id'

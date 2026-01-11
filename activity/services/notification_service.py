@@ -25,7 +25,7 @@ class NotificationService:
         )
 
     @staticmethod
-    def on_user_followed(*, follow: ProfileFollow):
+    def on_user_followed(follow: ProfileFollow):
         ActivityService.create_activity(
             actor=follow.follower,
             recipient=follow.following,

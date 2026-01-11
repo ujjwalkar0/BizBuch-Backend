@@ -1,1 +1,3 @@
 from .follow_service import FollowService
+from .profile_stats_service import ProfileStatsService
+from .connections_service import ConnectionsService

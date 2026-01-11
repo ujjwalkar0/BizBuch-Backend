@@ -13,10 +13,11 @@ from uploads.services import generate_presigned_view
 User = get_user_model()
 
 
-class ProfileSerializer(serializers.Serializer):
+class ProfileDetailResponseSerializer(serializers.Serializer):
     """
-    Main profile response serializer with key fields.
-    Follows Dependency Inversion Principle - depends on ProfileStatsService.
+    Detailed profile response serializer with all fields.
+    Follows Single Responsibility Principle - aggregates data from Profile and User models.
+    Follows Open/Closed Principle - can be extended without modifying.
     """
 
     # Basic Info
@@ -33,10 +34,11 @@ class ProfileSerializer(serializers.Serializer):
     company_logo = serializers.SerializerMethodField()
     industry = serializers.CharField(source='user.industry', allow_null=True, allow_blank=True)
     
-    # Locations (multiple) - replaces single location field
+    # Locations (multiple)
     locations = ProfileLocationSerializer(many=True, read_only=True)
 
     # Contact & Links
+    email = serializers.SerializerMethodField()
     phone = serializers.CharField(source='user.phone', allow_null=True, allow_blank=True)
     website = serializers.URLField(source='user.website', allow_null=True, allow_blank=True)
     linkedin_url = serializers.URLField(source='user.linkedin_url', allow_null=True, allow_blank=True)
@@ -48,7 +50,7 @@ class ProfileSerializer(serializers.Serializer):
     following_count = serializers.SerializerMethodField()
     posts_count = serializers.SerializerMethodField()
 
-    # Connection Status
+    # Connection Status (for viewing other users)
     is_connected = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
     mutual_connections_count = serializers.SerializerMethodField()
@@ -63,7 +65,7 @@ class ProfileSerializer(serializers.Serializer):
     joined_date = serializers.DateTimeField(source='user.joined_date')
     skills = serializers.ListField(child=serializers.CharField())
     
-    # Education (multiple) - replaces single education field
+    # Education (multiple)
     educations = ProfileEducationSerializer(many=True, read_only=True)
     
     # Work Experience (multiple)
@@ -98,6 +100,13 @@ class ProfileSerializer(serializers.Serializer):
             return None
         return generate_presigned_view(obj.cover_image)
 
+    def get_email(self, obj):
+        """Get email (only if viewing own profile or user is staff)"""
+        viewing_user = self.viewing_user
+        if viewing_user and (viewing_user == obj.user or viewing_user.is_staff):
+            return obj.user.email
+        return None
+
     def get_connections_count(self, obj):
         """Get connections count from service"""
         return ProfileStatsService.get_connections_count(obj.user)
@@ -131,7 +140,5 @@ class ProfileSerializer(serializers.Serializer):
         if self.viewing_user and self.viewing_user != obj.user:
             return ProfileStatsService.get_mutual_connections_count(self.viewing_user, obj.user)
         return 0
-
-
 
 
