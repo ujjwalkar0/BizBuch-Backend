@@ -716,6 +716,74 @@ Environment variables are settings your Lambda function reads at runtime.
 
 Let's verify the function is working:
 
+##### How to Get a Test JWT Token
+
+The Lambda function validates JWT tokens issued by your Django backend. You need to get a valid token from your Django application first.
+
+**Method 1: Using Django Admin or API (Recommended)**
+
+If your Django server is running locally or on a server:
+
+```bash
+# Make sure your Django server is running
+# Then get a token by logging in via the API
+
+curl -X POST http://localhost:8000/api/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"email": "your-email@example.com", "password": "your-password"}'
+```
+
+The response will include an `access` token:
+```json
+{
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM3MjAwMDAwLCJ1c2VyX2lkIjoxfQ.xxxxx",
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+Copy the `access` token value - this is your JWT token.
+
+**Method 2: Using Django Shell**
+
+```bash
+# Activate your virtual environment
+cd /home/ujjwal/Desktop/BizBuch/BizBuch-Backend
+source venv/bin/activate
+
+# Open Django shell
+python manage.py shell
+```
+
+Then in the Python shell:
+```python
+from rest_framework_simplejwt.tokens import RefreshToken
+from accounts.models import User
+
+# Get an existing user (replace with a valid user ID or email)
+user = User.objects.get(id=1)  # or User.objects.get(email='your@email.com')
+
+# Generate tokens
+refresh = RefreshToken.for_user(user)
+access_token = str(refresh.access_token)
+
+print("Access Token:", access_token)
+```
+
+Copy the printed access token.
+
+**Method 3: Using Browser Developer Tools (This method will not be applicable now until our website will be ready)**
+
+If you have a frontend application that's already logged in:
+1. Open your web app and log in
+2. Open Browser Developer Tools (F12)
+3. Go to **Application** → **Local Storage** or **Session Storage**
+4. Look for a key like `accessToken` or `token`
+5. Copy the token value
+
+---
+
+##### Now Test the Lambda Function
+
 1. Click on the **"Test"** tab (near the top)
 
 2. Click **"Create new event"**
@@ -723,27 +791,30 @@ Let's verify the function is working:
 3. Configure the test event:
    - **Event name**: `TestUploadEndpoint`
    - **Template**: Keep as "hello-world"
-   - Replace the JSON with:
+   - Replace the JSON with (paste your actual token):
 
    ```json
    {
      "httpMethod": "POST",
      "path": "/presign/upload",
      "headers": {
-       "Authorization": "Bearer your-test-jwt-token",
+       "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_ACTUAL_TOKEN_HERE",
        "Content-Type": "application/json"
      },
      "body": "{\"contentType\": \"image/jpeg\"}"
    }
    ```
 
+   > ⚠️ Replace `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_ACTUAL_TOKEN_HERE` with the actual JWT token you obtained!
+
 4. Click **"Save"**
 
 5. Click **"Test"** button
 
 6. Check the results:
-   - **Green banner** = Success (may show auth error if token is invalid, but function runs)
-   - **Red banner** = Error (check the error message)
+   - **Green banner with 200 status** = ✅ Success! You'll see `uploadUrl` and `publicUrl` in the response
+   - **Green banner with 401 status** = Token validation failed (check JWT_SECRET matches Django)
+   - **Red banner** = Function error (check the error message)
 
 #### Step 8: Note the Function ARN
 
@@ -1078,81 +1149,591 @@ aws lambda delete-function --function-name bizbuch-presigned-url --region ap-sou
 
 ## API Gateway Configuration
 
-### Option 1: HTTP API (Recommended for Simplicity)
+### What is API Gateway and Why Do We Need It?
 
-```bash
-# Create HTTP API
-aws apigatewayv2 create-api \
-  --name bizbuch-presigned-url-api \
-  --protocol-type HTTP \
-  --region ap-south-1
+**Amazon API Gateway** is a service that acts as a "front door" for your Lambda function. Think of it like a receptionist:
 
-# Note the API ID from the output, then create integration
-aws apigatewayv2 create-integration \
-  --api-id YOUR_API_ID \
-  --integration-type AWS_PROXY \
-  --integration-uri arn:aws:lambda:ap-south-1:ACCOUNT_ID:function:bizbuch-presigned-url \
-  --payload-format-version 2.0 \
-  --region ap-south-1
+- **Without API Gateway**: Your Lambda function exists, but no one from the internet can reach it
+- **With API Gateway**: Users can call your Lambda function via HTTP URLs like `https://abc123.execute-api.ap-south-1.amazonaws.com/presign/upload`
 
-# Create routes
-aws apigatewayv2 create-route \
-  --api-id YOUR_API_ID \
-  --route-key "POST /presign/upload" \
-  --target integrations/YOUR_INTEGRATION_ID \
-  --region ap-south-1
+**How it works:**
 
-aws apigatewayv2 create-route \
-  --api-id YOUR_API_ID \
-  --route-key "OPTIONS /presign/upload" \
-  --target integrations/YOUR_INTEGRATION_ID \
-  --region ap-south-1
-
-aws apigatewayv2 create-route \
-  --api-id YOUR_API_ID \
-  --route-key "POST /presign/view" \
-  --target integrations/YOUR_INTEGRATION_ID \
-  --region ap-south-1
-
-aws apigatewayv2 create-route \
-  --api-id YOUR_API_ID \
-  --route-key "OPTIONS /presign/view" \
-  --target integrations/YOUR_INTEGRATION_ID \
-  --region ap-south-1
-
-# Create default stage with auto-deploy
-aws apigatewayv2 create-stage \
-  --api-id YOUR_API_ID \
-  --stage-name '$default' \
-  --auto-deploy \
-  --region ap-south-1
+```
+User/Frontend App                API Gateway                    Lambda Function
+      |                              |                                |
+      |  POST /presign/upload        |                                |
+      |----------------------------->|                                |
+      |                              |  Invoke Lambda                 |
+      |                              |------------------------------->|
+      |                              |                                |
+      |                              |         Response               |
+      |                              |<-------------------------------|
+      |        JSON Response         |                                |
+      |<-----------------------------|                                |
 ```
 
-### Option 2: Using AWS Console
+### API Gateway Types
 
-1. Go to [API Gateway Console](https://console.aws.amazon.com/apigateway)
-2. Click **Create API** → **HTTP API** → **Build**
-3. Add integration:
-   - Integration type: Lambda
-   - Lambda function: `bizbuch-presigned-url`
-4. Configure routes:
+AWS offers two types of API Gateway:
+
+| Type | Best For | Cost | Features |
+|------|----------|------|----------|
+| **HTTP API** | Simple REST APIs, Lambda integrations | Cheaper (up to 70% less) | Basic features, faster |
+| **REST API** | Complex APIs, advanced features | More expensive | More control, API keys, usage plans |
+
+**For this project, we'll use HTTP API** because it's simpler and cheaper.
+
+### Before You Begin - Checklist
+
+Make sure you have:
+
+- [ ] ✅ Created and deployed the Lambda function `bizbuch-presigned-url`
+- [ ] ✅ Tested the Lambda function successfully
+- [ ] ✅ Have your AWS Account ID ready
+- [ ] ✅ Have your Lambda Function ARN (from the previous section)
+
+---
+
+### Option 1: Using AWS Console (Recommended for Beginners)
+
+This method uses the visual AWS website interface.
+
+#### Step 1: Open API Gateway Console
+
+1. Open your browser and go to: https://console.aws.amazon.com/apigateway
+2. Sign in to your AWS account
+3. Make sure you're in the correct region (check top-right corner)
+   - For India: Select **Asia Pacific (Mumbai) ap-south-1**
+
+#### Step 2: Create a New API
+
+1. On the API Gateway dashboard, you'll see different API types
+
+2. Find the **"HTTP API"** card and click **"Build"**
+
+   > 💡 **Why HTTP API?** It's simpler, cheaper, and perfect for Lambda integrations. REST API has more features but is more complex and expensive.
+
+#### Step 3: Configure API Settings
+
+On the "Create an API" page:
+
+1. **API name**: Enter `bizbuch-presigned-url-api`
+
+2. Click **"Next"** button
+
+#### Step 4: Configure Routes
+
+Routes define the URL paths your API will respond to.
+
+1. Click **"Add route"** and configure the first route:
+   
+   | Field | Value |
+   |-------|-------|
+   | **Method** | `POST` |
+   | **Resource path** | `/presign/upload` |
+
+2. Click **"Add route"** again for the second route:
+   
+   | Field | Value |
+   |-------|-------|
+   | **Method** | `POST` |
+   | **Resource path** | `/presign/view` |
+
+3. You should now see 2 routes listed:
    - `POST /presign/upload`
    - `POST /presign/view`
-   - `OPTIONS /presign/upload` (for CORS)
-   - `OPTIONS /presign/view` (for CORS)
-5. Configure stage: `$default` with auto-deploy
-6. Click **Create**
 
-### Grant API Gateway Permission to Invoke Lambda
+4. Click **"Next"** button
+
+#### Step 5: Configure Integrations (Connect to Lambda)
+
+Now we connect each route to your Lambda function.
+
+1. For **"Integration target"**, select **"Lambda function"**
+
+2. Click on the **"POST /presign/upload"** route
+
+3. Configure the integration:
+   
+   | Field | Value |
+   |-------|-------|
+   | **Integration type** | Lambda function |
+   | **AWS Region** | ap-south-1 (or your region) |
+   | **Lambda function** | `bizbuch-presigned-url` (select from dropdown) |
+
+4. Click on the **"POST /presign/view"** route and configure it the same way:
+   
+   | Field | Value |
+   |-------|-------|
+   | **Integration type** | Lambda function |
+   | **AWS Region** | ap-south-1 |
+   | **Lambda function** | `bizbuch-presigned-url` |
+
+5. Click **"Next"** button
+
+#### Step 6: Configure Stage
+
+Stages are like deployment environments (e.g., dev, staging, production).
+
+1. **Stage name**: Keep the default `$default`
+   
+   > 💡 The `$default` stage means requests go directly to your API without a stage prefix in the URL.
+
+2. **Auto-deploy**: Make sure this is **enabled** (checked)
+   
+   > This means any changes you make are automatically deployed.
+
+3. Click **"Next"** button
+
+#### Step 7: Review and Create
+
+1. Review your configuration:
+   - **API name**: `bizbuch-presigned-url-api`
+   - **Routes**: `POST /presign/upload`, `POST /presign/view`
+   - **Integrations**: Both connected to `bizbuch-presigned-url` Lambda
+   - **Stage**: `$default` with auto-deploy
+
+2. Click **"Create"** button
+
+3. ✅ You'll see a success message and be taken to the API details page
+
+#### Step 8: Get Your API Endpoint URL
+
+1. On the API details page, look for **"Invoke URL"** in the **"$default Stage"** section
+
+2. Your API URL will look like:
+   ```
+   https://abc123xyz.execute-api.ap-south-1.amazonaws.com
+   ```
+
+3. **Copy and save this URL!** This is your API endpoint.
+
+Your full endpoints will be:
+- **Upload**: `https://abc123xyz.execute-api.ap-south-1.amazonaws.com/presign/upload`
+- **View**: `https://abc123xyz.execute-api.ap-south-1.amazonaws.com/presign/view`
+
+#### Step 9: Configure CORS (Cross-Origin Resource Sharing)
+
+CORS allows your frontend (running on a different domain) to call your API.
+
+1. In the left sidebar, click on **"CORS"**
+
+2. Click **"Configure"**
+
+3. Set the following:
+
+   | Field | Value |
+   |-------|-------|
+   | **Access-Control-Allow-Origin** | `*` (or specific domains like `http://localhost:3000, https://yourdomain.com`) |
+   | **Access-Control-Allow-Headers** | `Content-Type, Authorization` |
+   | **Access-Control-Allow-Methods** | `POST, OPTIONS` |
+
+4. Click **"Save"**
+
+> ⚠️ **Production Note**: In production, replace `*` with your actual frontend domain(s) for security.
+
+#### Step 10: Test Your API
+
+Now let's test the API from the command line:
+
+```bash
+# Set your API URL (replace with your actual URL)
+API_URL="https://abc123xyz.execute-api.ap-south-1.amazonaws.com"
+
+# Get a JWT token from Django (use the method from earlier)
+TOKEN="your-jwt-token-here"
+
+# Test the upload endpoint
+curl -X POST "${API_URL}/presign/upload" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"contentType": "image/jpeg"}'
+```
+
+**Expected successful response:**
+```json
+{
+  "uploadUrl": "https://bizbuch-media.s3.ap-south-1.amazonaws.com/posts/1/uuid.jpg?X-Amz-Algorithm=...",
+  "publicUrl": "posts/1/uuid.jpg"
+}
+```
+
+---
+
+### Option 2: Using AWS CLI (For Automation)
+
+This method uses command-line tools. Good for scripting and CI/CD pipelines.
+
+#### Step 1: Set Configuration Variables
+
+```bash
+# Set your variables
+API_NAME="bizbuch-presigned-url-api"
+REGION="ap-south-1"
+FUNCTION_NAME="bizbuch-presigned-url"
+
+# Get your AWS Account ID
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+echo "AWS Account ID: $AWS_ACCOUNT_ID"
+```
+
+#### Step 2: Create the HTTP API
+
+```bash
+# Create the API and capture the output
+API_RESULT=$(aws apigatewayv2 create-api \
+    --name "$API_NAME" \
+    --protocol-type HTTP \
+    --region "$REGION")
+
+# Extract the API ID
+API_ID=$(echo $API_RESULT | jq -r '.ApiId')
+echo "Created API with ID: $API_ID"
+
+# Extract the API Endpoint
+API_ENDPOINT=$(echo $API_RESULT | jq -r '.ApiEndpoint')
+echo "API Endpoint: $API_ENDPOINT"
+```
+
+**Expected output:**
+```json
+{
+    "ApiEndpoint": "https://abc123xyz.execute-api.ap-south-1.amazonaws.com",
+    "ApiId": "abc123xyz",
+    "Name": "bizbuch-presigned-url-api",
+    "ProtocolType": "HTTP",
+    ...
+}
+```
+
+#### Step 3: Create Lambda Integration
+
+```bash
+# Create integration with Lambda
+INTEGRATION_RESULT=$(aws apigatewayv2 create-integration \
+    --api-id "$API_ID" \
+    --integration-type AWS_PROXY \
+    --integration-uri "arn:aws:lambda:${REGION}:${AWS_ACCOUNT_ID}:function:${FUNCTION_NAME}" \
+    --payload-format-version "2.0" \
+    --region "$REGION")
+
+# Extract Integration ID
+INTEGRATION_ID=$(echo $INTEGRATION_RESULT | jq -r '.IntegrationId')
+echo "Created Integration with ID: $INTEGRATION_ID"
+```
+
+#### Step 4: Create Routes
+
+```bash
+# Create POST /presign/upload route
+aws apigatewayv2 create-route \
+    --api-id "$API_ID" \
+    --route-key "POST /presign/upload" \
+    --target "integrations/$INTEGRATION_ID" \
+    --region "$REGION"
+
+# Create POST /presign/view route
+aws apigatewayv2 create-route \
+    --api-id "$API_ID" \
+    --route-key "POST /presign/view" \
+    --target "integrations/$INTEGRATION_ID" \
+    --region "$REGION"
+
+# Create OPTIONS routes for CORS preflight requests
+aws apigatewayv2 create-route \
+    --api-id "$API_ID" \
+    --route-key "OPTIONS /presign/upload" \
+    --target "integrations/$INTEGRATION_ID" \
+    --region "$REGION"
+
+aws apigatewayv2 create-route \
+    --api-id "$API_ID" \
+    --route-key "OPTIONS /presign/view" \
+    --target "integrations/$INTEGRATION_ID" \
+    --region "$REGION"
+
+echo "✅ Routes created successfully!"
+```
+
+#### Step 5: Create Default Stage with Auto-Deploy
+
+```bash
+aws apigatewayv2 create-stage \
+    --api-id "$API_ID" \
+    --stage-name '$default' \
+    --auto-deploy \
+    --region "$REGION"
+
+echo "✅ Stage created with auto-deploy!"
+```
+
+#### Step 6: Grant API Gateway Permission to Invoke Lambda
+
+This is **critical** - without this, API Gateway cannot call your Lambda function!
 
 ```bash
 aws lambda add-permission \
-  --function-name bizbuch-presigned-url \
-  --statement-id apigateway-invoke \
-  --action lambda:InvokeFunction \
-  --principal apigateway.amazonaws.com \
-  --source-arn "arn:aws:execute-api:ap-south-1:ACCOUNT_ID:YOUR_API_ID/*" \
-  --region ap-south-1
+    --function-name "$FUNCTION_NAME" \
+    --statement-id "apigateway-invoke-${API_ID}" \
+    --action lambda:InvokeFunction \
+    --principal apigateway.amazonaws.com \
+    --source-arn "arn:aws:execute-api:${REGION}:${AWS_ACCOUNT_ID}:${API_ID}/*" \
+    --region "$REGION"
+
+echo "✅ Lambda permission granted to API Gateway!"
+```
+
+#### Step 7: Configure CORS
+
+```bash
+aws apigatewayv2 update-api \
+    --api-id "$API_ID" \
+    --cors-configuration '{
+        "AllowOrigins": ["*"],
+        "AllowMethods": ["POST", "OPTIONS"],
+        "AllowHeaders": ["Content-Type", "Authorization"],
+        "MaxAge": 86400
+    }' \
+    --region "$REGION"
+
+echo "✅ CORS configured!"
+```
+
+#### Step 8: Verify and Get API URL
+
+```bash
+# Get API details
+aws apigatewayv2 get-api \
+    --api-id "$API_ID" \
+    --region "$REGION"
+
+# Print the final API URL
+echo ""
+echo "=========================================="
+echo "🎉 API Gateway Setup Complete!"
+echo "=========================================="
+echo "API ID: $API_ID"
+echo "API Endpoint: $API_ENDPOINT"
+echo ""
+echo "Your endpoints are:"
+echo "  POST ${API_ENDPOINT}/presign/upload"
+echo "  POST ${API_ENDPOINT}/presign/view"
+echo "=========================================="
+```
+
+---
+
+### Complete CLI Script
+
+Here's a complete script you can save and run:
+
+```bash
+#!/bin/bash
+set -e
+
+# Configuration
+API_NAME="bizbuch-presigned-url-api"
+REGION="ap-south-1"
+FUNCTION_NAME="bizbuch-presigned-url"
+
+echo "🚀 Starting API Gateway setup..."
+
+# Get AWS Account ID
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+echo "AWS Account ID: $AWS_ACCOUNT_ID"
+
+# Step 1: Create HTTP API
+echo "Creating HTTP API..."
+API_RESULT=$(aws apigatewayv2 create-api \
+    --name "$API_NAME" \
+    --protocol-type HTTP \
+    --region "$REGION")
+
+API_ID=$(echo $API_RESULT | jq -r '.ApiId')
+API_ENDPOINT=$(echo $API_RESULT | jq -r '.ApiEndpoint')
+echo "✅ API created: $API_ID"
+
+# Step 2: Create Lambda Integration
+echo "Creating Lambda integration..."
+INTEGRATION_RESULT=$(aws apigatewayv2 create-integration \
+    --api-id "$API_ID" \
+    --integration-type AWS_PROXY \
+    --integration-uri "arn:aws:lambda:${REGION}:${AWS_ACCOUNT_ID}:function:${FUNCTION_NAME}" \
+    --payload-format-version "2.0" \
+    --region "$REGION")
+
+INTEGRATION_ID=$(echo $INTEGRATION_RESULT | jq -r '.IntegrationId')
+echo "✅ Integration created: $INTEGRATION_ID"
+
+# Step 3: Create Routes
+echo "Creating routes..."
+aws apigatewayv2 create-route --api-id "$API_ID" --route-key "POST /presign/upload" --target "integrations/$INTEGRATION_ID" --region "$REGION" > /dev/null
+aws apigatewayv2 create-route --api-id "$API_ID" --route-key "POST /presign/view" --target "integrations/$INTEGRATION_ID" --region "$REGION" > /dev/null
+aws apigatewayv2 create-route --api-id "$API_ID" --route-key "OPTIONS /presign/upload" --target "integrations/$INTEGRATION_ID" --region "$REGION" > /dev/null
+aws apigatewayv2 create-route --api-id "$API_ID" --route-key "OPTIONS /presign/view" --target "integrations/$INTEGRATION_ID" --region "$REGION" > /dev/null
+echo "✅ Routes created"
+
+# Step 4: Create Stage
+echo "Creating stage..."
+aws apigatewayv2 create-stage \
+    --api-id "$API_ID" \
+    --stage-name '$default' \
+    --auto-deploy \
+    --region "$REGION" > /dev/null
+echo "✅ Stage created"
+
+# Step 5: Grant Lambda Permission
+echo "Granting Lambda permission..."
+aws lambda add-permission \
+    --function-name "$FUNCTION_NAME" \
+    --statement-id "apigateway-invoke-${API_ID}" \
+    --action lambda:InvokeFunction \
+    --principal apigateway.amazonaws.com \
+    --source-arn "arn:aws:execute-api:${REGION}:${AWS_ACCOUNT_ID}:${API_ID}/*" \
+    --region "$REGION" > /dev/null 2>&1 || echo "Permission may already exist"
+echo "✅ Lambda permission granted"
+
+# Step 6: Configure CORS
+echo "Configuring CORS..."
+aws apigatewayv2 update-api \
+    --api-id "$API_ID" \
+    --cors-configuration '{
+        "AllowOrigins": ["*"],
+        "AllowMethods": ["POST", "OPTIONS"],
+        "AllowHeaders": ["Content-Type", "Authorization"],
+        "MaxAge": 86400
+    }' \
+    --region "$REGION" > /dev/null
+echo "✅ CORS configured"
+
+# Done!
+echo ""
+echo "=========================================="
+echo "🎉 API Gateway Setup Complete!"
+echo "=========================================="
+echo "API ID: $API_ID"
+echo "API Endpoint: $API_ENDPOINT"
+echo ""
+echo "Your endpoints are:"
+echo "  POST ${API_ENDPOINT}/presign/upload"
+echo "  POST ${API_ENDPOINT}/presign/view"
+echo "=========================================="
+```
+
+Save this as `setup-api-gateway.sh` and run:
+```bash
+chmod +x setup-api-gateway.sh
+./setup-api-gateway.sh
+```
+
+---
+
+### Understanding the Components
+
+| Component | What It Does |
+|-----------|--------------|
+| **API** | The container for all your routes and configurations |
+| **Route** | Maps a URL path + HTTP method to an integration (e.g., `POST /presign/upload`) |
+| **Integration** | Connects a route to a backend (Lambda function in our case) |
+| **Stage** | A deployment snapshot of your API (like dev, staging, prod) |
+| **CORS** | Allows browsers to call your API from different domains |
+
+---
+
+### Quick Reference: API Gateway URLs
+
+After setup, your API will have these endpoints:
+
+| Endpoint | URL | Purpose |
+|----------|-----|---------|
+| Upload | `https://{api-id}.execute-api.{region}.amazonaws.com/presign/upload` | Get presigned URL for uploading |
+| View | `https://{api-id}.execute-api.{region}.amazonaws.com/presign/view` | Get presigned URL for viewing |
+
+---
+
+### Troubleshooting API Gateway Issues
+
+#### Error: "Internal Server Error" (500)
+**Possible causes:**
+1. Lambda function has an error
+2. API Gateway doesn't have permission to invoke Lambda
+
+**Solution:**
+```bash
+# Check if permission exists
+aws lambda get-policy --function-name bizbuch-presigned-url --region ap-south-1
+
+# Add permission if missing
+aws lambda add-permission \
+    --function-name bizbuch-presigned-url \
+    --statement-id apigateway-invoke \
+    --action lambda:InvokeFunction \
+    --principal apigateway.amazonaws.com \
+    --source-arn "arn:aws:execute-api:ap-south-1:ACCOUNT_ID:API_ID/*" \
+    --region ap-south-1
+```
+
+#### Error: "Missing Authentication Token"
+**Cause:** You're calling a route that doesn't exist.
+**Solution:** Double-check the URL path. Make sure it's exactly `/presign/upload` or `/presign/view`.
+
+#### Error: "CORS error" in browser
+**Cause:** CORS is not configured or misconfigured.
+**Solution:**
+1. Check CORS settings in API Gateway Console
+2. Make sure `Access-Control-Allow-Origin` includes your frontend domain
+3. Verify OPTIONS routes exist for preflight requests
+
+#### Error: "Forbidden" (403)
+**Cause:** API Gateway's resource policy is blocking the request.
+**Solution:** Check if there are any resource policies attached to the API that might be blocking requests.
+
+#### How to Delete and Recreate API Gateway
+
+If you need to start over:
+
+```bash
+# List all APIs to find the ID
+aws apigatewayv2 get-apis --region ap-south-1
+
+# Delete the API (this also deletes all routes and stages)
+aws apigatewayv2 delete-api --api-id YOUR_API_ID --region ap-south-1
+
+# Remove Lambda permission
+aws lambda remove-permission \
+    --function-name bizbuch-presigned-url \
+    --statement-id apigateway-invoke \
+    --region ap-south-1
+```
+
+---
+
+### Quick Reference Commands
+
+```bash
+# List all HTTP APIs
+aws apigatewayv2 get-apis --region ap-south-1
+
+# Get details of a specific API
+aws apigatewayv2 get-api --api-id YOUR_API_ID --region ap-south-1
+
+# List routes for an API
+aws apigatewayv2 get-routes --api-id YOUR_API_ID --region ap-south-1
+
+# List integrations for an API
+aws apigatewayv2 get-integrations --api-id YOUR_API_ID --region ap-south-1
+
+# Get stages
+aws apigatewayv2 get-stages --api-id YOUR_API_ID --region ap-south-1
+
+# Update CORS
+aws apigatewayv2 update-api \
+    --api-id YOUR_API_ID \
+    --cors-configuration '{"AllowOrigins":["https://yourdomain.com"],"AllowMethods":["POST","OPTIONS"],"AllowHeaders":["Content-Type","Authorization"]}' \
+    --region ap-south-1
+
+# Delete an API
+aws apigatewayv2 delete-api --api-id YOUR_API_ID --region ap-south-1
 ```
 
 ---
