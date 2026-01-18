@@ -17,6 +17,22 @@ services:
       - db
       - redis
 
+  cron:
+    build: .
+    command: >
+      sh -c "
+      python manage.py crontab add &&
+      cron -f
+      "
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - web
+
   redis:
     image: redis:7-alpine
     restart: always
