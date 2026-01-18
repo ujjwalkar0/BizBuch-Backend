@@ -563,75 +563,516 @@ Or find it in the AWS Console:
 
 ## Deploying to AWS Lambda
 
-### Option 1: Using AWS CLI (Recommended)
+### What is AWS Lambda?
 
-#### First-Time Deployment
+**AWS Lambda** is a "serverless" computing service. Instead of managing servers yourself, you just upload your code and AWS runs it for you. Key benefits:
+
+- **No servers to manage**: AWS handles all the infrastructure
+- **Pay only for what you use**: You're charged only when your code runs
+- **Automatic scaling**: Lambda handles thousands of requests automatically
+- **High availability**: Your code runs across multiple data centers
+
+### Before You Begin - Checklist
+
+Make sure you have completed these steps:
+
+- [ ] ✅ Built the `bootstrap` binary (from "Building the Lambda Function" section)
+- [ ] ✅ Created `function.zip` containing the bootstrap binary
+- [ ] ✅ Created the IAM role `bizbuch-presigned-url-lambda-role` (from "IAM Role Setup" section)
+- [ ] ✅ Have your AWS Account ID ready (12-digit number like `123456789012`)
+- [ ] ✅ Know your JWT secret from Django settings
+
+### Understanding the Deployment Options
+
+| Option | Best For | Difficulty |
+|--------|----------|------------|
+| **AWS Console** | Beginners, visual learners | ⭐ Easy |
+| **AWS CLI** | Automation, scripting | ⭐⭐ Medium |
+| **AWS SAM** | Infrastructure as Code, CI/CD | ⭐⭐⭐ Advanced |
+
+---
+
+### Option 1: Using AWS Console (Recommended for Beginners)
+
+This method uses the visual AWS website interface.
+
+#### Step 1: Open AWS Lambda Console
+
+1. Open your browser and go to: https://console.aws.amazon.com/lambda
+2. Sign in to your AWS account
+3. Make sure you're in the correct region (check top-right corner)
+   - For India: Select **Asia Pacific (Mumbai) ap-south-1**
+   - Click on the region name to change it if needed
+
+#### Step 2: Create a New Function
+
+1. Click the orange **"Create function"** button
+
+2. On the "Create function" page, select **"Author from scratch"** (should be selected by default)
+
+3. Fill in the **Basic information**:
+
+   | Field | Value | Explanation |
+   |-------|-------|-------------|
+   | **Function name** | `bizbuch-presigned-url` | A unique name for your function |
+   | **Runtime** | Select **"Provide your own bootstrap on Amazon Linux 2023"** | For Go compiled binaries |
+   | **Architecture** | Select **x86_64** | Or arm64 if you built for ARM |
+
+4. Expand **"Change default execution role"** section:
+   
+   - Select **"Use an existing role"**
+   - In the dropdown **"Existing role"**, search for and select: `bizbuch-presigned-url-lambda-role`
+   
+   > ⚠️ If you don't see the role, go back and complete the "IAM Role Setup" section first!
+
+5. Click **"Create function"** button
+
+6. ✅ Wait for the success message: "Successfully created the function bizbuch-presigned-url"
+
+#### Step 3: Upload Your Code
+
+1. You should now be on the function's detail page
+
+2. Scroll down to the **"Code source"** section
+
+3. Click **"Upload from"** dropdown button (on the right side)
+
+4. Select **".zip file"**
+
+5. Click **"Upload"** and browse to your `function.zip` file:
+   ```
+   /home/ujjwal/Desktop/BizBuch/BizBuch-Backend/lambda/pre-signed-url/function.zip
+   ```
+
+6. Click **"Save"** button
+
+7. ✅ Wait for the upload to complete. You'll see "Successfully updated the function bizbuch-presigned-url"
+
+#### Step 4: Configure Runtime Settings
+
+1. In the **"Code source"** section, scroll down to find **"Runtime settings"**
+
+2. Click **"Edit"** button
+
+3. Set the following:
+   
+   | Field | Value |
+   |-------|-------|
+   | **Runtime** | Amazon Linux 2023 |
+   | **Handler** | `bootstrap` |
+   | **Architecture** | x86_64 (or arm64 if you built for ARM) |
+
+4. Click **"Save"**
+
+#### Step 5: Configure Environment Variables
+
+Environment variables are settings your Lambda function reads at runtime.
+
+1. Click on the **"Configuration"** tab (near the top of the page)
+
+2. In the left sidebar, click **"Environment variables"**
+
+3. Click **"Edit"** button
+
+4. Click **"Add environment variable"** and add these three variables:
+
+   **Variable 1:**
+   | Key | Value |
+   |-----|-------|
+   | `AWS_REGION` | `ap-south-1` |
+
+   **Variable 2:**
+   | Key | Value |
+   |-----|-------|
+   | `AWS_S3_BUCKET` | `bizbuch-media` |
+   
+   > Replace `bizbuch-media` with your actual S3 bucket name
+
+   **Variable 3:**
+   | Key | Value |
+   |-----|-------|
+   | `JWT_SECRET` | `your-django-secret-key-here` |
+   
+   > ⚠️ **Important**: This must match your Django `SECRET_KEY` or SimpleJWT signing key exactly!
+
+5. Click **"Save"**
+
+#### Step 6: Configure General Settings (Timeout & Memory)
+
+1. Still in the **"Configuration"** tab, click **"General configuration"** in the left sidebar
+
+2. Click **"Edit"**
+
+3. Set the following:
+
+   | Setting | Value | Explanation |
+   |---------|-------|-------------|
+   | **Memory** | `128` MB | Sufficient for this function |
+   | **Timeout** | `10` sec | Max time for function to complete |
+
+4. Click **"Save"**
+
+#### Step 7: Test Your Lambda Function (Optional but Recommended)
+
+Let's verify the function is working:
+
+1. Click on the **"Test"** tab (near the top)
+
+2. Click **"Create new event"**
+
+3. Configure the test event:
+   - **Event name**: `TestUploadEndpoint`
+   - **Template**: Keep as "hello-world"
+   - Replace the JSON with:
+
+   ```json
+   {
+     "httpMethod": "POST",
+     "path": "/presign/upload",
+     "headers": {
+       "Authorization": "Bearer your-test-jwt-token",
+       "Content-Type": "application/json"
+     },
+     "body": "{\"contentType\": \"image/jpeg\"}"
+   }
+   ```
+
+4. Click **"Save"**
+
+5. Click **"Test"** button
+
+6. Check the results:
+   - **Green banner** = Success (may show auth error if token is invalid, but function runs)
+   - **Red banner** = Error (check the error message)
+
+#### Step 8: Note the Function ARN
+
+1. At the top of the Lambda function page, you'll see **Function ARN**:
+   ```
+   arn:aws:lambda:ap-south-1:123456789012:function:bizbuch-presigned-url
+   ```
+
+2. **Copy and save this ARN** - you'll need it when setting up API Gateway!
+
+---
+
+### Option 2: Using AWS CLI (For Automation)
+
+This method uses command-line tools. Good for scripting and automation.
+
+#### Prerequisites
 
 ```bash
-# Replace ACCOUNT_ID with your AWS account ID
-# Replace ap-south-1 with your desired region
+# Verify AWS CLI is installed and configured
+aws --version
+aws configure list
 
-aws lambda create-function \
-  --function-name bizbuch-presigned-url \
-  --runtime provided.al2023 \
-  --handler bootstrap \
-  --architectures x86_64 \
-  --zip-file fileb://function.zip \
-  --role arn:aws:iam::ACCOUNT_ID:role/bizbuch-presigned-url-lambda-role \
-  --timeout 10 \
-  --memory-size 128 \
-  --environment "Variables={AWS_REGION=ap-south-1,AWS_S3_BUCKET=bizbuch-media,JWT_SECRET=your-jwt-secret-here}" \
-  --region ap-south-1
+# Make sure you're in the lambda directory
+cd /home/ujjwal/Desktop/BizBuch/BizBuch-Backend/lambda/pre-signed-url
+
+# Verify function.zip exists
+ls -la function.zip
 ```
 
-#### For ARM64 Architecture (Graviton2)
+#### Step 1: Get Your AWS Account ID
+
+```bash
+# Get and save your AWS Account ID
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+echo "Your AWS Account ID is: $AWS_ACCOUNT_ID"
+```
+
+#### Step 2: Set Configuration Variables
+
+```bash
+# Set these variables (modify as needed)
+FUNCTION_NAME="bizbuch-presigned-url"
+REGION="ap-south-1"
+ROLE_NAME="bizbuch-presigned-url-lambda-role"
+S3_BUCKET="bizbuch-media"
+JWT_SECRET="your-django-secret-key-here"  # Replace with your actual secret
+
+# Construct the Role ARN
+ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}"
+echo "Using Role ARN: $ROLE_ARN"
+```
+
+#### Step 3: Create the Lambda Function
+
+**For x86_64 Architecture:**
+
 ```bash
 aws lambda create-function \
-  --function-name bizbuch-presigned-url \
-  --runtime provided.al2023 \
-  --handler bootstrap \
-  --architectures arm64 \
-  --zip-file fileb://function.zip \
-  --role arn:aws:iam::ACCOUNT_ID:role/bizbuch-presigned-url-lambda-role \
-  --timeout 10 \
-  --memory-size 128 \
-  --environment "Variables={AWS_REGION=ap-south-1,AWS_S3_BUCKET=bizbuch-media,JWT_SECRET=your-jwt-secret-here}" \
-  --region ap-south-1
+    --function-name "$FUNCTION_NAME" \
+    --runtime provided.al2023 \
+    --handler bootstrap \
+    --architectures x86_64 \
+    --zip-file fileb://function.zip \
+    --role "$ROLE_ARN" \
+    --timeout 10 \
+    --memory-size 128 \
+    --environment "Variables={AWS_REGION=${REGION},AWS_S3_BUCKET=${S3_BUCKET},JWT_SECRET=${JWT_SECRET}}" \
+    --region "$REGION"
 ```
 
-### Option 2: Using AWS SAM
+**For ARM64 Architecture (Graviton2 - 20% cheaper):**
+
+```bash
+aws lambda create-function \
+    --function-name "$FUNCTION_NAME" \
+    --runtime provided.al2023 \
+    --handler bootstrap \
+    --architectures arm64 \
+    --zip-file fileb://function.zip \
+    --role "$ROLE_ARN" \
+    --timeout 10 \
+    --memory-size 128 \
+    --environment "Variables={AWS_REGION=${REGION},AWS_S3_BUCKET=${S3_BUCKET},JWT_SECRET=${JWT_SECRET}}" \
+    --region "$REGION"
+```
+
+**Expected Output:**
+
+```json
+{
+    "FunctionName": "bizbuch-presigned-url",
+    "FunctionArn": "arn:aws:lambda:ap-south-1:123456789012:function:bizbuch-presigned-url",
+    "Runtime": "provided.al2023",
+    "Role": "arn:aws:iam::123456789012:role/bizbuch-presigned-url-lambda-role",
+    "Handler": "bootstrap",
+    "CodeSize": 8945678,
+    "Timeout": 10,
+    "MemorySize": 128,
+    "State": "Pending",
+    ...
+}
+```
+
+> 📝 **Save the FunctionArn** - you'll need it for API Gateway setup!
+
+#### Step 4: Wait for Function to be Active
+
+```bash
+# Wait for the function to be ready
+aws lambda wait function-active-v2 \
+    --function-name "$FUNCTION_NAME" \
+    --region "$REGION"
+
+echo "✅ Lambda function is now active!"
+```
+
+#### Step 5: Verify the Deployment
+
+```bash
+# Check the function configuration
+aws lambda get-function-configuration \
+    --function-name "$FUNCTION_NAME" \
+    --region "$REGION" \
+    --query '{Name:FunctionName,State:State,Runtime:Runtime,Memory:MemorySize,Timeout:Timeout}' \
+    --output table
+```
+
+**Expected Output:**
+
+```
+----------------------------------------------------------
+|                GetFunctionConfiguration                |
++---------+----------+----------+-------------------+----+
+| Memory  |   Name   | Runtime  |      State        |Timeout|
++---------+----------+----------+-------------------+----+
+|  128    | bizbuch-presigned-url| provided.al2023| Active|  10 |
++---------+----------+----------+-------------------+----+
+```
+
+#### Step 6: Test the Function (Optional)
+
+```bash
+# Invoke the function with a test event
+aws lambda invoke \
+    --function-name "$FUNCTION_NAME" \
+    --region "$REGION" \
+    --payload '{"httpMethod":"POST","path":"/presign/upload","headers":{"Authorization":"Bearer test"},"body":"{\"contentType\":\"image/jpeg\"}"}' \
+    --cli-binary-format raw-in-base64-out \
+    response.json
+
+# View the response
+cat response.json
+```
+
+---
+
+### Option 3: Using AWS SAM (For Infrastructure as Code)
+
+AWS SAM (Serverless Application Model) is ideal for managing infrastructure as code.
+
+#### Prerequisites
+
+```bash
+# Install AWS SAM CLI (if not installed)
+# On Ubuntu/Debian:
+pip install aws-sam-cli
+
+# On macOS with Homebrew:
+brew install aws-sam-cli
+
+# Verify installation
+sam --version
+```
+
+#### Step 1: Navigate to the Lambda Directory
 
 ```bash
 cd /home/ujjwal/Desktop/BizBuch/BizBuch-Backend/lambda/pre-signed-url
-
-# Build
-sam build
-
-# Deploy (guided mode for first-time setup)
-sam deploy --guided
-
-# Or deploy with specific parameters
-sam deploy \
-  --stack-name bizbuch-presigned-url-stack \
-  --capabilities CAPABILITY_IAM \
-  --region ap-south-1
 ```
 
-### Option 3: Using AWS Console
+#### Step 2: Review the SAM Template
 
-1. Go to [AWS Lambda Console](https://console.aws.amazon.com/lambda)
-2. Click **Create function**
-3. Choose **Author from scratch**
-4. Configure:
-   - Function name: `bizbuch-presigned-url`
-   - Runtime: `Amazon Linux 2023`
-   - Architecture: `x86_64` (or `arm64` for Graviton2)
-   - Execution role: Select the role created earlier
-5. Click **Create function**
-6. In the **Code** tab, click **Upload from** → **.zip file**
-7. Upload `function.zip`
-8. In **Runtime settings**, set Handler to `bootstrap`
-9. Go to **Configuration** → **Environment variables** and add the required variables
+The `template.yaml` file defines your Lambda function. Open it to verify:
+
+```bash
+cat template.yaml
+```
+
+#### Step 3: Build with SAM
+
+```bash
+# Build the function
+sam build
+
+# This creates a .aws-sam directory with the built artifacts
+```
+
+#### Step 4: Deploy with Guided Mode (First Time)
+
+```bash
+sam deploy --guided
+```
+
+SAM will ask you several questions:
+
+```
+Setting default arguments for 'sam deploy'
+=========================================
+Stack Name [sam-app]: bizbuch-presigned-url-stack
+AWS Region [us-east-1]: ap-south-1
+Confirm changes before deploy [y/N]: y
+Allow SAM CLI IAM role creation [Y/n]: Y
+Disable rollback [y/N]: N
+Save arguments to configuration file [Y/n]: Y
+SAM configuration file [samconfig.toml]: 
+SAM configuration environment [default]: 
+```
+
+#### Step 5: Deploy (Subsequent Times)
+
+After the first deployment, just run:
+
+```bash
+sam deploy
+```
+
+#### Step 6: Get the API Endpoint
+
+After deployment, SAM will output the API Gateway URL:
+
+```
+CloudFormation outputs from deployed stack
+------------------------------------------
+Outputs
+------------------------------------------
+Key                 PresignedUrlApi
+Description         API Gateway endpoint URL
+Value               https://abc123xyz.execute-api.ap-south-1.amazonaws.com/Prod/
+------------------------------------------
+```
+
+---
+
+### Understanding Deployment Parameters
+
+Here's what each parameter means:
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `--function-name` | `bizbuch-presigned-url` | Unique identifier for your function |
+| `--runtime` | `provided.al2023` | Custom runtime for compiled Go binary |
+| `--handler` | `bootstrap` | Name of the executable file |
+| `--architectures` | `x86_64` or `arm64` | CPU architecture (must match your build) |
+| `--zip-file` | `fileb://function.zip` | Path to your deployment package |
+| `--role` | `arn:aws:iam::...` | IAM role ARN for permissions |
+| `--timeout` | `10` | Max execution time in seconds |
+| `--memory-size` | `128` | RAM allocation in MB |
+| `--environment` | `Variables={...}` | Runtime configuration |
+| `--region` | `ap-south-1` | AWS region to deploy to |
+
+---
+
+### Troubleshooting Deployment Issues
+
+#### Error: "Function not found"
+```bash
+# Check if function exists
+aws lambda get-function --function-name bizbuch-presigned-url --region ap-south-1
+```
+**Solution**: Make sure you created the function first.
+
+#### Error: "Role does not exist"
+**Solution**: 
+1. Verify the role exists: `aws iam get-role --role-name bizbuch-presigned-url-lambda-role`
+2. Check you're using the correct AWS account
+3. Complete the "IAM Role Setup" section first
+
+#### Error: "Invalid zip file"
+**Solution**:
+```bash
+# Rebuild the deployment package
+cd /home/ujjwal/Desktop/BizBuch/BizBuch-Backend/lambda/pre-signed-url
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -tags lambda.norpc -o bootstrap main.go
+chmod +x bootstrap
+zip function.zip bootstrap
+```
+
+#### Error: "exec format error" when testing
+**Cause**: Architecture mismatch between build and Lambda setting.
+**Solution**: Ensure you built for the same architecture as configured in Lambda:
+- If Lambda is set to `x86_64`, build with `GOARCH=amd64`
+- If Lambda is set to `arm64`, build with `GOARCH=arm64`
+
+#### Function times out
+**Solution**: Increase the timeout:
+```bash
+aws lambda update-function-configuration \
+    --function-name bizbuch-presigned-url \
+    --timeout 30 \
+    --region ap-south-1
+```
+
+---
+
+### Quick Reference Commands
+
+```bash
+# View function details
+aws lambda get-function --function-name bizbuch-presigned-url --region ap-south-1
+
+# View function configuration only
+aws lambda get-function-configuration --function-name bizbuch-presigned-url --region ap-south-1
+
+# Update function code
+aws lambda update-function-code \
+    --function-name bizbuch-presigned-url \
+    --zip-file fileb://function.zip \
+    --region ap-south-1
+
+# Update environment variables
+aws lambda update-function-configuration \
+    --function-name bizbuch-presigned-url \
+    --environment "Variables={AWS_REGION=ap-south-1,AWS_S3_BUCKET=bizbuch-media,JWT_SECRET=new-secret}" \
+    --region ap-south-1
+
+# Delete function (if needed to start over)
+aws lambda delete-function --function-name bizbuch-presigned-url --region ap-south-1
+```
 
 ---
 
