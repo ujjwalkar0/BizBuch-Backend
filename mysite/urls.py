@@ -31,6 +31,7 @@ urlpatterns = [
     path('onboarding/',include('onboarding.urls')),
     path('profiles/',include('profiles.urls')),
     path('activity/',include('activity.urls')),
+    path('chat/', include('chat.urls')),
 
     path("uploads/", include("uploads.urls")),
 

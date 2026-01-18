@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: BizBuch Presigned URL Lambda
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  PresignedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: bootstrap
+      Runtime: provided.al2023
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          AWS_S3_BUCKET: bizbuch-media
+          JWT_SECRET: your-jwt-secret-here
+      Events:
+        PresignUpload:
+          Type: Api
+          Properties:
+            Path: /presign/upload
+            Method: post
+        PresignUploadOptions:
+          Type: Api
+          Properties:
+            Path: /presign/upload
+            Method: options
+        PresignView:
+          Type: Api
+          Properties:
+            Path: /presign/view
+            Method: post
+        PresignViewOptions:
+          Type: Api
+          Properties:
+            Path: /presign/view
+            Method: options
+
+Outputs:
+  PresignedUrlApi:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  PresignedUrlFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt PresignedUrlFunction.Arn

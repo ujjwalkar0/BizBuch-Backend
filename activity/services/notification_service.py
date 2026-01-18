@@ -10,7 +10,7 @@ class NotificationService:
 
         ActivityService.create_activity(
             actor=comment.user,
-            recipient=post.user,
+            recipient=post.author,
             verb="commented",
             target=comment,
         )
@@ -19,7 +19,7 @@ class NotificationService:
     def on_post_liked(*, like: PostLike):
         ActivityService.create_activity(
             actor=like.user,
-            recipient=like.post.user,
+            recipient=like.post.author,
             verb="liked",
             target=like.post,
         )

@@ -5,3 +5,4 @@ __pycache__
 seed*
 staticfiles/
 .env
+env.json
