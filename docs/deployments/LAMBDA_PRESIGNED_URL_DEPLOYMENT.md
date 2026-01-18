@@ -1213,65 +1213,59 @@ This method uses the visual AWS website interface.
 
    > 💡 **Why HTTP API?** It's simpler, cheaper, and perfect for Lambda integrations. REST API has more features but is more complex and expensive.
 
-#### Step 3: Configure API Settings
+#### Step 3: Add Integrations (Connect to Lambda FIRST)
 
-On the "Create an API" page:
+On the "Create an API" page, you'll see **"Add integration"** section. You must add the Lambda integration **before** you can add routes.
 
-1. **API name**: Enter `bizbuch-presigned-url-api`
+1. Click **"Add integration"**
 
-2. Click **"Next"** button
-
-#### Step 4: Configure Routes
-
-Routes define the URL paths your API will respond to.
-
-1. Click **"Add route"** and configure the first route:
+2. Configure the integration:
    
    | Field | Value |
    |-------|-------|
-   | **Method** | `POST` |
-   | **Resource path** | `/presign/upload` |
+   | **Integration type** | Select **Lambda** from the dropdown |
+   | **AWS Region** | `ap-south-1` (or your region) |
+   | **Lambda function** | Start typing `bizbuch-presigned-url` and select it from the dropdown |
 
-2. Click **"Add route"** again for the second route:
+   > ⚠️ If you don't see your Lambda function in the dropdown:
+   > - Make sure you're in the correct AWS region
+   > - Verify the Lambda function was created successfully
+   > - Try refreshing the page
+
+3. You should see the integration added showing:
+   - **Lambda** - `bizbuch-presigned-url`
+
+4. **API name**: Enter `bizbuch-presigned-url-api` in the "API name" field (if not already filled)
+
+#### Step 4: Configure Routes
+
+Now that you have an integration, the **"Add route"** button will be enabled!
+
+1. Click **"Add route"** (it should now be clickable)
+
+2. Configure the first route:
+   
+   | Field | Value |
+   |-------|-------|
+   | **Method** | Select `POST` from dropdown |
+   | **Resource path** | Type `/presign/upload` |
+   | **Integration target** | Select the Lambda integration you just created |
+
+3. Click **"Add route"** again for the second route:
    
    | Field | Value |
    |-------|-------|
    | **Method** | `POST` |
    | **Resource path** | `/presign/view` |
+   | **Integration target** | Select the same Lambda integration |
 
-3. You should now see 2 routes listed:
-   - `POST /presign/upload`
-   - `POST /presign/view`
-
-4. Click **"Next"** button
-
-#### Step 5: Configure Integrations (Connect to Lambda)
-
-Now we connect each route to your Lambda function.
-
-1. For **"Integration target"**, select **"Lambda function"**
-
-2. Click on the **"POST /presign/upload"** route
-
-3. Configure the integration:
-   
-   | Field | Value |
-   |-------|-------|
-   | **Integration type** | Lambda function |
-   | **AWS Region** | ap-south-1 (or your region) |
-   | **Lambda function** | `bizbuch-presigned-url` (select from dropdown) |
-
-4. Click on the **"POST /presign/view"** route and configure it the same way:
-   
-   | Field | Value |
-   |-------|-------|
-   | **Integration type** | Lambda function |
-   | **AWS Region** | ap-south-1 |
-   | **Lambda function** | `bizbuch-presigned-url` |
+4. You should now see 2 routes listed:
+   - `POST /presign/upload` → Lambda: bizbuch-presigned-url
+   - `POST /presign/view` → Lambda: bizbuch-presigned-url
 
 5. Click **"Next"** button
 
-#### Step 6: Configure Stage
+#### Step 5: Configure Stage
 
 Stages are like deployment environments (e.g., dev, staging, production).
 
@@ -1285,7 +1279,7 @@ Stages are like deployment environments (e.g., dev, staging, production).
 
 3. Click **"Next"** button
 
-#### Step 7: Review and Create
+#### Step 6: Review and Create
 
 1. Review your configuration:
    - **API name**: `bizbuch-presigned-url-api`
@@ -1297,7 +1291,7 @@ Stages are like deployment environments (e.g., dev, staging, production).
 
 3. ✅ You'll see a success message and be taken to the API details page
 
-#### Step 8: Get Your API Endpoint URL
+#### Step 7: Get Your API Endpoint URL
 
 1. On the API details page, look for **"Invoke URL"** in the **"$default Stage"** section
 
@@ -1312,7 +1306,7 @@ Your full endpoints will be:
 - **Upload**: `https://abc123xyz.execute-api.ap-south-1.amazonaws.com/presign/upload`
 - **View**: `https://abc123xyz.execute-api.ap-south-1.amazonaws.com/presign/view`
 
-#### Step 9: Configure CORS (Cross-Origin Resource Sharing)
+#### Step 8: Configure CORS (Cross-Origin Resource Sharing)
 
 CORS allows your frontend (running on a different domain) to call your API.
 
@@ -1332,7 +1326,7 @@ CORS allows your frontend (running on a different domain) to call your API.
 
 > ⚠️ **Production Note**: In production, replace `*` with your actual frontend domain(s) for security.
 
-#### Step 10: Test Your API
+#### Step 9: Test Your API
 
 Now let's test the API from the command line:
 
