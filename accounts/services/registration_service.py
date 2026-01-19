@@ -13,9 +13,9 @@ OTP_EXPIRY_MINUTES = 10
 MAX_OTP_ATTEMPTS = 5
 MAX_RESENDS = 3
 
-# Check if OTP verification is enabled (default: True)
-# Pass --otp-verification=False when running docker to disable
-OTP_VERIFICATION_ENABLED = os.environ.get('OTP_VERIFICATION_ENABLED', 'True').lower() in ('true', '1', 'yes')
+def is_otp_verification_enabled():
+    """Check if OTP verification is enabled at runtime (not at import time)"""
+    return os.environ.get('OTP_VERIFICATION_ENABLED', 'True').lower() in ('true', '1', 'yes')
 
 class RegistrationService:
     """
@@ -53,7 +53,8 @@ class RegistrationService:
         )
 
         # Send email (use Celery in prod)
-        send_otp_email(email, otp, username=username)
+        if is_otp_verification_enabled():
+            send_otp_email(email, otp, username=username)
         return pending
     
     @staticmethod
@@ -90,7 +91,7 @@ class RegistrationService:
             raise ValueError("No pending registration found")
 
         # Skip OTP verification if disabled via environment variable
-        if OTP_VERIFICATION_ENABLED:
+        if is_otp_verification_enabled():
             # expired
             if pending.is_expired(OTP_EXPIRY_MINUTES):
                 pending.delete()

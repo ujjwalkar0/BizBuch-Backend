@@ -1,6 +1,8 @@
 services:
   web:
-    image: ujjwalkar/bizbuch-backend:latest
+    build: .
+    volumes:
+      - .:/app
     command: >
       sh -c "
       python manage.py migrate &&
