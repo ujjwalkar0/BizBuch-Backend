@@ -1,27 +1,29 @@
 services:
   web:
-    build: .
+    image: ujjwalkar/bizbuch-backend:latest
     command: >
       sh -c "
       python manage.py migrate &&
       python manage.py collectstatic --noinput &&
       gunicorn mysite.wsgi:application --bind 0.0.0.0:8000
       "
-    volumes:
-      - .:/app
     ports:
-      - "8000:8000"
+      - "8000:8000"   # ✅ only required exposed port
     environment:
+      - DEBUG=True
       - OTP_VERIFICATION_ENABLED=False
+
+      # Postgres
       - DB_HOST=db
       - DB_PORT=5432
-      - REDIS_HOST=redis
       - POSTGRES_DB=bizbuch
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - DEBUG=True
 
-      # --- S3 (MinIO) ---
+      # Redis
+      - REDIS_HOST=redis
+
+      # S3 (MinIO)
       - AWS_ACCESS_KEY_ID=minioadmin
       - AWS_SECRET_ACCESS_KEY=minioadmin
       - AWS_S3_ENDPOINT_URL=http://minio:9000
@@ -30,15 +32,14 @@ services:
       - AWS_S3_USE_SSL=False
 
     depends_on:
-      - db
-      - redis
-      - minio
-
-  redis:
-    image: redis:7-alpine
-    restart: always
-    ports:
-      - "6379:6379"
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+      minio_init:
+        condition: service_completed_successfully
 
   db:
     image: postgres:15
@@ -47,19 +48,22 @@ services:
       POSTGRES_DB: bizbuch
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bizbuch"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
-  # ✅ S3-Compatible object storage
+  redis:
+    image: redis:7-alpine
+    restart: always
+
   minio:
     image: minio/minio:latest
     container_name: minio
     restart: always
-    ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Console UI
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -67,16 +71,21 @@ services:
     volumes:
       - minio_data:/data
 
-  # ✅ creates the bucket automatically
+    # Optional: expose MinIO ports only if needed for UI/debugging
+    # ports:
+    #   - "9000:9000"
+    #   - "9001:9001"
+
   minio_init:
     image: minio/mc:latest
     depends_on:
       - minio
+    restart: "no"
     entrypoint: >
       /bin/sh -c "
       until (/usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin) do sleep 2; done;
-      /usr/bin/mc mb -p myminio/bizbuch;
-      /usr/bin/mc anonymous set download myminio/bizbuch;
+      /usr/bin/mc mb -p myminio/bizbuch || true;
+      /usr/bin/mc anonymous set download myminio/bizbuch || true;
       exit 0;
       "
 
