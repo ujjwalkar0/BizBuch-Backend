@@ -30,7 +30,7 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha,prefix=
-            type=ref,event=branch
+            # type=ref,event=branch  # Uncomment to tag with branch name when multiple branches are enabled
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
