@@ -11,14 +11,24 @@ services:
       - .:/app
     ports:
       - "8000:8000"
-    env_file:
-      - .env
     environment:
-      # Set to True to enable OTP verification (disabled by default for development)
-      - OTP_VERIFICATION_ENABLED=${OTP_VERIFICATION_ENABLED:-False}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - POSTGRES_DB=bizbuch
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - SECRET_KEY=django-insecure-dev-key-change-in-production
+      - DEBUG=True
+      - OTP_VERIFICATION_ENABLED=False
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - AWS_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_S3_BUCKET=bizbuch
     depends_on:
       - db
       - redis
+      - minio
 
   cron:
     build: .
@@ -29,11 +39,21 @@ services:
       "
     volumes:
       - .:/app
-    env_file:
-      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - POSTGRES_DB=bizbuch
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - AWS_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_S3_BUCKET=bizbuch
     depends_on:
       - db
       - redis
+      - minio
       - web
 
   redis:
@@ -46,11 +66,25 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: bizbuch
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio:latest
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
 volumes:
   postgres_data:
+  minio_data:
