@@ -19,6 +19,7 @@ services:
       - POSTGRES_DB=bizbuch
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - DEBUG=True
 
       # --- S3 (MinIO) ---
       - AWS_ACCESS_KEY_ID=minioadmin
