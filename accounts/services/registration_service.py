@@ -1,3 +1,4 @@
+import os
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth import get_user_model
@@ -11,6 +12,10 @@ User = get_user_model()
 OTP_EXPIRY_MINUTES = 10
 MAX_OTP_ATTEMPTS = 5
 MAX_RESENDS = 3
+
+# Check if OTP verification is enabled (default: True)
+# Pass --otp-verification=False when running docker to disable
+OTP_VERIFICATION_ENABLED = os.environ.get('OTP_VERIFICATION_ENABLED', 'True').lower() in ('true', '1', 'yes')
 
 class RegistrationService:
     """
@@ -84,21 +89,23 @@ class RegistrationService:
         except PendingUser.DoesNotExist:
             raise ValueError("No pending registration found")
 
-        # expired
-        if pending.is_expired(OTP_EXPIRY_MINUTES):
-            pending.delete()
-            raise ValueError("OTP expired. Please register again.")
+        # Skip OTP verification if disabled via environment variable
+        if OTP_VERIFICATION_ENABLED:
+            # expired
+            if pending.is_expired(OTP_EXPIRY_MINUTES):
+                pending.delete()
+                raise ValueError("OTP expired. Please register again.")
 
-        # brute force protection
-        if pending.attempt_count >= MAX_OTP_ATTEMPTS:
-            pending.delete()
-            raise ValueError("Too many invalid attempts, please register again.")
+            # brute force protection
+            if pending.attempt_count >= MAX_OTP_ATTEMPTS:
+                pending.delete()
+                raise ValueError("Too many invalid attempts, please register again.")
 
-        # check otp
-        if pending.otp != otp:
-            pending.attempt_count += 1
-            pending.save(update_fields=["attempt_count"])
-            raise ValueError("Invalid OTP")
+            # check otp
+            if pending.otp != otp:
+                pending.attempt_count += 1
+                pending.save(update_fields=["attempt_count"])
+                raise ValueError("Invalid OTP")
 
         # create user using already-hashed password — use create() to avoid double-hash
         user = User.objects.create(
