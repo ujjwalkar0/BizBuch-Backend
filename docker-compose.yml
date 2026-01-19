@@ -11,8 +11,6 @@ services:
       - .:/app
     ports:
       - "8000:8000"
-    env_file:
-      - .env
     environment:
       # Set to True to enable OTP verification (disabled by default for development)
       - OTP_VERIFICATION_ENABLED=${OTP_VERIFICATION_ENABLED:-False}
@@ -31,42 +29,6 @@ services:
       - db
       - redis
 
-  cron:
-    build: .
-    command: >
-      sh -c "
-      python manage.py crontab add &&
-      cron -f
-      "
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
-      - web
-
-  redis:
-      - db
-      - redis
-      - minio
-
-  cron:
-    build: .
-    command: >
-      sh -c "
-      python manage.py crontab add &&
-      cron -f
-      "
-    volumes:
-      - .:/app
-    depends_on:
-      - db
-      - redis
-      - minio
-      - web
-
   redis:
     image: redis:7-alpine
     restart: always
@@ -80,5 +42,7 @@ services:
       POSTGRES_DB: bizbuch
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
