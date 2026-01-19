@@ -12,8 +12,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Set to True to enable OTP verification (disabled by default for development)
-      - OTP_VERIFICATION_ENABLED=${OTP_VERIFICATION_ENABLED:-False}
+      - OTP_VERIFICATION_ENABLED=False
       - DB_HOST=db
       - DB_PORT=5432
       - REDIS_HOST=redis
