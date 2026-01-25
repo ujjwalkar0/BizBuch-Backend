@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from accounts.serializers import TokenValidateSerializer
+from uploads.services import generate_presigned_view
 
 
 class TokenValidateView(APIView):
@@ -22,6 +23,11 @@ class TokenValidateView(APIView):
 
         user = serializer.validated_data["user"]
 
+        # Get profile photo presigned URL
+        profile_photo = None
+        if hasattr(user, 'profile') and user.profile.avatar:
+            profile_photo = generate_presigned_view(user.profile.avatar)
+
         return Response(
             {
                 "valid": True,
@@ -31,6 +37,7 @@ class TokenValidateView(APIView):
                     "email": user.email,
                     "first_name": user.first_name,
                     "last_name": user.last_name,
+                    "profile_photo": profile_photo,
                 },
             },
             status=status.HTTP_200_OK,

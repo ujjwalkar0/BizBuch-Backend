@@ -156,12 +156,13 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-# AWS Configuration
+# AWS/S3/MinIO Configuration
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_REGION = "ap-south-1"
-AWS_S3_BUCKET = "bizbuch-media"
+AWS_REGION = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
+AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL")  # e.g., http://minio:9000 for MinIO
+AWS_S3_BUCKET = os.getenv("AWS_S3_BUCKET", "bizbuch")
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases

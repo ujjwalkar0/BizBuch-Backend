@@ -10,7 +10,8 @@ class PostListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        PostService.create_post(self.request.user, serializer.validated_data)
+        post = PostService.create_post(self.request.user, serializer.validated_data)
+        serializer.instance = post
 
 
 class PostRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):

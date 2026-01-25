@@ -23,6 +23,7 @@ class ProfileEducationSerializer(serializers.ModelSerializer):
     """Serializer for user profile education"""
     
     school_logo = serializers.SerializerMethodField()
+    school_logo_key = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True, source='school_logo')
     
     class Meta:
         model = ProfileEducation
@@ -35,11 +36,12 @@ class ProfileEducationSerializer(serializers.ModelSerializer):
             'end_year',
             'is_current',
             'school_logo',
+            'school_logo_key',
             'description',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'school_logo']
     
     def get_school_logo(self, obj):
         """Get school logo presigned URL"""
@@ -52,6 +54,7 @@ class ProfileWorkExperienceSerializer(serializers.ModelSerializer):
     """Serializer for user profile work experience"""
     
     company_logo = serializers.SerializerMethodField()
+    company_logo_key = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True, source='company_logo')
     
     class Meta:
         model = ProfileWorkExperience
@@ -67,12 +70,13 @@ class ProfileWorkExperienceSerializer(serializers.ModelSerializer):
             'end_month',
             'is_current',
             'company_logo',
+            'company_logo_key',
             'description',
             'skills',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'company_logo']
     
     def get_company_logo(self, obj):
         """Get company logo presigned URL"""

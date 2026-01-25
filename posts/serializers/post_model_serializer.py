@@ -4,7 +4,14 @@ from uploads.services import generate_presigned_view
 
 class PostModelSerializer(serializers.ModelSerializer):
     author = serializers.ReadOnlyField(source="author.username")
+    author_avatar = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
+    imageUrl = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True)
+
+    def get_author_avatar(self, obj):
+        if hasattr(obj.author, 'profile') and obj.author.profile and obj.author.profile.avatar:
+            return generate_presigned_view(obj.author.profile.avatar)
+        return None
 
     def get_image_url(self, obj):
         if not obj.imageUrl:
@@ -13,6 +20,5 @@ class PostModelSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Post
-        # fields = '__all__'
-        exclude = ['imageUrl']
-        read_only_fields = ["id", "created_at", "author", "likes_count", "comments_count", "shares_count"]
+        fields = '__all__'
+        read_only_fields = ["id", "created_at", "author", "author_avatar", "likes_count", "comments_count", "shares_count"]

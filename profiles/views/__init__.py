@@ -6,3 +6,5 @@ from .followers_api_view import FollowersListAPIView
 from .followings_api_view import FollowingListAPIView
 from .unfollow_api_view import UnfollowProfileAPIView
 from .connections_api_view import ConnectionsAPIView
+from .work_experience_api_view import WorkExperienceCreateAPIView, WorkExperienceUpdateDeleteAPIView
+from .education_api_view import EducationCreateAPIView, EducationUpdateDeleteAPIView
