@@ -8,9 +8,6 @@ class User(AbstractUser):
     
     # Professional Info
     headline = models.CharField(max_length=255, blank=True, null=True)  # e.g., "Senior Software Engineer at Google"
-    current_position = models.CharField(max_length=255, blank=True, null=True)  # Job title
-    company = models.CharField(max_length=255, blank=True, null=True)  # Current company name
-    industry = models.CharField(max_length=100, blank=True, null=True)  # e.g., "Technology", "Finance"
     
     # Contact & Links
     phone = models.CharField(max_length=20, blank=True, null=True)

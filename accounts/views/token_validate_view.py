@@ -12,7 +12,6 @@ class TokenValidateView(APIView):
         serializer = TokenValidateSerializer(data=request.data)
 
         if not serializer.is_valid():
-            print("Token validation errors:", serializer.errors)
             return Response(
                 {
                     "valid": False,

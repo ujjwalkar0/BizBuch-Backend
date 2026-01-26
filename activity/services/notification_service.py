@@ -5,7 +5,7 @@ from profiles.models import ProfileFollow
 
 class NotificationService:
     @staticmethod
-    def on_comment_added(*, comment: PostComment):
+    def on_comment_added(comment: PostComment):
         post = comment.post
 
         ActivityService.create_activity(
@@ -16,7 +16,7 @@ class NotificationService:
         )
 
     @staticmethod
-    def on_post_liked(*, like: PostLike):
+    def on_post_liked(like: PostLike):
         ActivityService.create_activity(
             actor=like.user,
             recipient=like.post.author,

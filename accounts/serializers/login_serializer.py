@@ -14,14 +14,9 @@ class LoginSerializer(serializers.Serializer):
         # Try email first
         user = User.objects.filter(email__iexact=identifier).first()
 
-        print("User found by email:", user)
-
         # If not email, try username
         if not user:
             user = User.objects.filter(username__iexact=identifier).first()
-
-            print("User found by username:", user)
-
         if not user:
             raise serializers.ValidationError("Invalid credentials")
 

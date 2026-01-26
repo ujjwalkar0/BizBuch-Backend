@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from chat.models import Conversation, Message
 from chat.serializers.message_serializer import MessageSerializer
+from uploads.services import generate_presigned_view
 
 
 class ConversationParticipantSerializer(serializers.Serializer):
@@ -10,6 +11,7 @@ class ConversationParticipantSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     headline = serializers.CharField(allow_null=True)
+    avatar = serializers.CharField(allow_null=True)
 
 
 class ConversationSerializer(serializers.ModelSerializer):
@@ -50,12 +52,16 @@ class ConversationListSerializer(serializers.ModelSerializer):
         if request and request.user:
             other_user = obj.get_other_participant(request.user)
             if other_user:
+                avatar_url = None
+                if hasattr(other_user, 'profile') and other_user.profile and other_user.profile.avatar:
+                    avatar_url = generate_presigned_view(other_user.profile.avatar)
                 return {
                     'id': other_user.id,
                     'username': other_user.username,
                     'first_name': other_user.first_name,
                     'last_name': other_user.last_name,
                     'headline': getattr(other_user, 'headline', None),
+                    'avatar': avatar_url,
                 }
         return None
 

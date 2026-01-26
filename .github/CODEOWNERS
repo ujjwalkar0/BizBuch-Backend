@@ -1,0 +1,7 @@
+# Code owners for BizBuch
+* @ujjwalkar0
+
+# Owners for platform directories
+/android/ @ujjwalkar0
+/ios/ @ujjwalkar0
+/src/ @ujjwalkar0

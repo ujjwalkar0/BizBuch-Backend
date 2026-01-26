@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema_field
 from profiles.models import Profile
 from profiles.services.profile_stats_service import ProfileStatsService
 from profiles.serializers.profile_location_serializer import (
@@ -7,6 +8,7 @@ from profiles.serializers.profile_location_serializer import (
     ProfileEducationSerializer,
     ProfileWorkExperienceSerializer
 )
+from profiles.serializers.profile_compact_serializer import CurrentWorkSerializer
 from uploads.services import generate_presigned_view
 
 
@@ -28,10 +30,8 @@ class ProfileSerializer(serializers.Serializer):
 
     # Professional Info
     headline = serializers.CharField(source='user.headline', allow_null=True, allow_blank=True)
-    current_position = serializers.CharField(source='user.current_position', allow_null=True, allow_blank=True)
-    company = serializers.CharField(source='user.company', allow_null=True, allow_blank=True)
+    current_work = serializers.SerializerMethodField()
     company_logo = serializers.SerializerMethodField()
-    industry = serializers.CharField(source='user.industry', allow_null=True, allow_blank=True)
     
     # Locations (multiple) - replaces single location field
     locations = ProfileLocationSerializer(many=True, read_only=True)
@@ -91,6 +91,19 @@ class ProfileSerializer(serializers.Serializer):
         if not obj.company_logo:
             return None
         return generate_presigned_view(obj.company_logo)
+
+    @extend_schema_field(CurrentWorkSerializer(allow_null=True))
+    def get_current_work(self, obj):
+        """Get current work experience (latest one with is_current=True or most recent)"""
+        work = obj.work_experiences.filter(is_current=True).first()
+        if not work:
+            work = obj.work_experiences.first()  # Already ordered by -is_current, -end_year, -start_year
+        if work:
+            return {
+                'job_title': work.job_title,
+                'company_name': work.company_name,
+            }
+        return None
 
     def get_cover_image(self, obj):
         """Get cover image presigned URL"""

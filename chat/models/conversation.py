@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 
 
@@ -33,14 +33,18 @@ class Conversation(models.Model):
     def get_or_create_conversation(cls, user1, user2):
         """
         Get an existing conversation between two users or create a new one.
+        Uses select_for_update to prevent race conditions.
         """
-        # Find conversations where both users are participants
-        conversation = cls.objects.filter(participants=user1).filter(participants=user2).first()
-        
-        if conversation:
-            return conversation, False
-        
-        # Create new conversation
-        conversation = cls.objects.create()
-        conversation.participants.add(user1, user2)
-        return conversation, True
+        with transaction.atomic():
+            # Lock and find conversations where both users are participants
+            conversation = cls.objects.select_for_update().filter(
+                participants=user1
+            ).filter(participants=user2).first()
+            
+            if conversation:
+                return conversation, False
+            
+            # Create new conversation
+            conversation = cls.objects.create()
+            conversation.participants.add(user1, user2)
+            return conversation, True

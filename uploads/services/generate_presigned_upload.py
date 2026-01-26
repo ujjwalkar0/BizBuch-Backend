@@ -1,7 +1,7 @@
 import boto3
 import uuid
-import os
 from django.conf import settings
+from uploads.services.replace_internal_host import replace_internal_host
 
 # Build S3 client config - supports both AWS S3 and MinIO
 s3_config = {
@@ -30,6 +30,6 @@ def generate_presigned_upload(user_id, content_type):
     )
 
     return {
-        "uploadUrl": upload_url,
+        "uploadUrl": replace_internal_host(upload_url),
         "publicUrl": key,
     }

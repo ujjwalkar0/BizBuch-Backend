@@ -59,7 +59,7 @@ INSTALLED_APPS = [
     'core',
     'activity',
     'uploads',
-    'chat',
+    'chat.apps.ChatConfig',
 ]
 
 MIDDLEWARE = [
@@ -73,6 +73,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.HideServerHeaderMiddleware',
+    'core.request_context.RequestContextMiddleware',
 ]
 
 CORS_ORIGIN_WHITELIST = [

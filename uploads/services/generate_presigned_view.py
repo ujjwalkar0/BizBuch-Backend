@@ -1,5 +1,6 @@
 import boto3
 from django.conf import settings
+from uploads.services.replace_internal_host import replace_internal_host
 
 # Build S3 client config
 s3_config = {
@@ -15,7 +16,7 @@ if getattr(settings, "AWS_S3_ENDPOINT_URL", None):
 s3 = boto3.client("s3", **s3_config)
 
 def generate_presigned_view(key):
-    return s3.generate_presigned_url(
+    url = s3.generate_presigned_url(
         "get_object",
         Params={
             "Bucket": settings.AWS_S3_BUCKET,
@@ -23,3 +24,4 @@ def generate_presigned_view(key):
         },
         ExpiresIn=3600,
     )
+    return replace_internal_host(url)

@@ -3,11 +3,13 @@ services:
     build: .
     volumes:
       - .:/app
+      # For production: daphne -b 0.0.0.0 -p 8000 --access-log - --verbosity 1 mysite.asgi:application
+      # For debug: python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 -m daphne -b 0.0.0.0 -p 8000 mysite.asgi:application
     command: >
       sh -c "
       python manage.py migrate &&
       python manage.py collectstatic --noinput &&
-      daphne -b 0.0.0.0 -p 8000 --access-log - --verbosity 1 mysite.asgi:application
+      python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 -m daphne -b 0.0.0.0 -p 8000 mysite.asgi:application
       "
     ports:
       - "8000:8000"   # ✅ only required exposed port
@@ -28,7 +30,7 @@ services:
       # S3 (MinIO)
       - AWS_ACCESS_KEY_ID=bizbuch_admin
       - AWS_SECRET_ACCESS_KEY=bizbuch_secret_key
-      - AWS_S3_ENDPOINT_URL=http://172.28.0.13:9000
+      - AWS_S3_ENDPOINT_URL=http://minio:9000
       - AWS_S3_BUCKET=bizbuch
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_S3_USE_SSL=False
@@ -144,15 +146,15 @@ services:
         ipv4_address: 172.28.0.16
 
   # Uncomment the following section to enable Cloudflare Tunnel
-  # tunnel:
-  #   image: cloudflare/cloudflared:latest
-  #   command: tunnel --no-autoupdate --url http://web:8000
-  #   restart: always
-  #   depends_on:
-  #     - web
-  #   networks:
-  #     bizbuch_network:
-  #       ipv4_address: 172.28.0.15
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://web:8000
+    restart: always
+    depends_on:
+      - web
+    networks:
+      bizbuch_network:
+        ipv4_address: 172.28.0.15
 
 volumes:
   postgres_data:
