@@ -44,3 +44,5 @@ uritemplate==4.2.0
 urllib3==2.6.2
 whitenoise==6.2.0
 debugpy==1.8.1
+watchfiles==1.1.1
+coverage==7.13.5

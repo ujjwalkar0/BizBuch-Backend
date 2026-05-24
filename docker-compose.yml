@@ -9,13 +9,14 @@ services:
       sh -c "
       python manage.py migrate &&
       python manage.py collectstatic --noinput &&
-      python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 -m daphne -b 0.0.0.0 -p 8000 mysite.asgi:application
+      watchfiles 'daphne -b 0.0.0.0 -p 8000 mysite.asgi:application' /app
       "
     ports:
       - "8000:8000"   # ✅ only required exposed port
     environment:
       - DEBUG=True
       - OTP_VERIFICATION_ENABLED=False
+      - DJANGO_SETTINGS_MODULE=mysite.settings.dev
 
       # Postgres
       - DB_HOST=db
@@ -56,8 +57,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     # Optional: expose Postgres port only if needed for external access
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -83,8 +84,8 @@ services:
     image: redis/redisinsight:latest
     container_name: redisinsight
     restart: always
-    ports:
-      - "5540:5540"
+    # ports:
+    #   - "5540:5540"
     depends_on:
       - redis
     networks:
@@ -103,9 +104,9 @@ services:
       - minio_data:/data
 
     # Optional: expose MinIO ports only if needed for UI/debugging
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    # ports:
+    #   - "9000:9000"
+    #   - "9001:9001"
     networks:
       bizbuch_network:
         ipv4_address: 172.28.0.13
@@ -126,35 +127,35 @@ services:
       bizbuch_network:
         ipv4_address: 172.28.0.14
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
-    ports:
-      - "5050:80"
-    volumes:
-      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
-    depends_on:
-      - db
-    networks:
-      bizbuch_network:
-        ipv4_address: 172.28.0.16
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: pgadmin
+  #   restart: always
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #     PGADMIN_CONFIG_SERVER_MODE: "False"
+  #     PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+  #   ports:
+  #     - "5050:80"
+  #   volumes:
+  #     - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+  #   depends_on:
+  #     - db
+  #   networks:
+  #     bizbuch_network:
+  #       ipv4_address: 172.28.0.16
 
   # Uncomment the following section to enable Cloudflare Tunnel
-  tunnel:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --url http://web:8000
-    restart: always
-    depends_on:
-      - web
-    networks:
-      bizbuch_network:
-        ipv4_address: 172.28.0.15
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel --no-autoupdate --url http://web:8000
+  #   restart: always
+  #   depends_on:
+  #     - web
+  #   networks:
+  #     bizbuch_network:
+  #       ipv4_address: 172.28.0.15
 
 volumes:
   postgres_data:

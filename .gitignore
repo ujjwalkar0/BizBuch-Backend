@@ -6,3 +6,4 @@ seed*
 staticfiles/
 .env
 env.json
+htmlcov/

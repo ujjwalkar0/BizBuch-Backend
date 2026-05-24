@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
+from core.errors import AppError
 
 User = get_user_model()
 
@@ -11,25 +12,22 @@ class LoginSerializer(serializers.Serializer):
         identifier = data["username"]
         password = data["password"]
 
-        # Try email first
-        user = User.objects.filter(email__iexact=identifier).first()
-
-        # If not email, try username
-        if not user:
-            user = User.objects.filter(username__iexact=identifier).first()
-        if not user:
-            raise serializers.ValidationError("Invalid credentials")
-
-        user = authenticate(
-            username=user.username,
-            password=password
+        # Try email first, then username
+        user = (
+            User.objects.filter(email__iexact=identifier).first() or
+            User.objects.filter(username__iexact=identifier).first()
         )
 
         if not user:
-            raise serializers.ValidationError("Invalid credentials")
+            raise serializers.ValidationError(AppError.INVALID_CREDENTIALS)
+
+        user = authenticate(username=user.username, password=password)
+
+        if not user:
+            raise serializers.ValidationError(AppError.INVALID_CREDENTIALS)
 
         if not user.is_active:
-            raise serializers.ValidationError("User account disabled")
+            raise serializers.ValidationError(AppError.ACCOUNT_DISABLED)
 
         data["user"] = user
         return data

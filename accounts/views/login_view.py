@@ -1,11 +1,12 @@
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.throttle.login_throttle import LoginThrottle
 from accounts.serializers import LoginSerializer
-from uploads.services import generate_presigned_view
+from core.response import error_response, success_response
+from accounts.serializers.user_serializer import UserSerializer
 
+# views.py
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
@@ -13,27 +14,21 @@ class LoginView(APIView):
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+
+        if not serializer.is_valid():
+            first_error = next(iter(serializer.errors.values()))
+            message = first_error[0] if isinstance(first_error, list) else str(first_error)
+            return error_response(
+                code="VALIDATION_ERROR",
+                message=message,
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         user = serializer.validated_data["user"]
-
-        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
 
-        # Get profile photo presigned URL
-        profile_photo = None
-        if hasattr(user, 'profile') and user.profile.avatar:
-            profile_photo = generate_presigned_view(user.profile.avatar)
-        
-        return Response({
+        return success_response(data={
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "profile_photo": profile_photo,
-            }
-        }, status=status.HTTP_200_OK)
+            "user": UserSerializer(user).data
+        })
